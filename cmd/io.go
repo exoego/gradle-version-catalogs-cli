@@ -27,9 +27,8 @@ func openVersionCatalogFile(root string) (*os.File, error) {
 	gradleDirPath := filepath.Join(root, "gradle")
 	gradleDir, err := os.Open(gradleDirPath)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Not a Gradle project seemingly: %s", gradleDirPath))
+		return nil, fmt.Errorf("Not a Gradle project seemingly: %s", gradleDirPath)
 	}
-	defer gradleDir.Close()
 
 	catalogFile, err := os.OpenFile(filepath.Join(gradleDir.Name(), "libs.version.toml"), os.O_RDWR|os.O_CREATE, 0644)
 	if errors.Is(err, os.ErrNotExist) {

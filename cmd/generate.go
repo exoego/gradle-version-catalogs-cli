@@ -23,7 +23,14 @@ var generateCommand = &cobra.Command{
 		}
 
 		catalogFile, err := openVersionCatalogFile(gradleProjectRootPath)
-		defer catalogFile.Close()
+		defer func(catalogFile *os.File) {
+			err := catalogFile.Close()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				return
+			}
+		}(catalogFile)
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			return
