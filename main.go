@@ -1,6 +1,6 @@
 package main
 
-import "github.com/exoego/go-cli-template/cmd"
+import "github.com/exoego/gradle-verstion-catalog-generator/cmd"
 
 func main() {
 	cmd.Execute()

@@ -1,4 +1,4 @@
-module github.com/exoego/go-cli-template
+module github.com/exoego/gradle-verstion-catalog-generator
 
 go 1.23
 
