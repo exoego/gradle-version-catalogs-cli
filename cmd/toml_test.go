@@ -11,11 +11,41 @@ func TestParseCatalogMinimum(t *testing.T) {
 	assert.Empty(t, got.Versions)
 	assert.Empty(t, got.Plugins)
 	assert.Empty(t, got.Bundles)
-	assert.Equal(t, got.Libraries, map[string]Library{
+	assert.Equal(t, map[string]map[string]any{
 		"guava": {
-			Group:   "com.google.guava",
-			Name:    "guava",
-			Version: "32.0.0-jre",
+			"group":   "com.google.guava",
+			"name":    "guava",
+			"version": "32.0.0-jre",
 		},
-	})
+		"foo-bar": {
+			"group": "org.example",
+			"name":  "foo-bar",
+			"version": map[string]any{
+				"ref": "bar",
+			},
+		},
+		"awsJavaSdkDynamodb": {
+			"module": "com.amazonaws:aws-java-sdk-dynamodb",
+			"version": map[string]any{
+				"ref": "awsJavaSdk",
+			},
+		},
+		"commons-lang3": {
+			"group": "org.apache.commons",
+			"name":  "commons-lang3",
+			"version": map[string]any{
+				"strictly": "[3.8, 4.0[",
+				"prefer":   "3.9",
+			},
+		},
+		"mylib-full-format": {
+			"group": "com.mycompany",
+			"name":  "alternate",
+			"version": map[string]any{
+				"require":   "1.4",
+				"reject":    "1.4.0",
+				"rejectAll": false,
+			},
+		},
+	}, got.Libraries)
 }

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"github.com/BurntSushi/toml"
 	"os"
 )
@@ -10,7 +8,7 @@ import (
 type (
 	VersionCatalog struct {
 		Versions  map[string]string
-		Libraries map[string]Library
+		Libraries map[string]map[string]any
 		Plugins   map[string]Plugin
 		Bundles   map[string][]string
 	}
@@ -32,12 +30,9 @@ func ParseCatalog(path string) (*VersionCatalog, error) {
 		return nil, err
 	}
 	var catalog *VersionCatalog
-	meta, err := toml.DecodeFile(path, &catalog)
+	_, err := toml.DecodeFile(path, &catalog)
 	if err != nil {
 		return nil, err
-	}
-	if len(meta.Undecoded()) > 0 {
-		return nil, errors.New(fmt.Sprintf("Undecoded keys: %v", meta.Undecoded()))
 	}
 	return catalog, nil
 }
