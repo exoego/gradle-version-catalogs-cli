@@ -1,17 +1,21 @@
 package cmd
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestParseCatalog(t *testing.T) {
-	got, err := ParseCatalog("../test/libs.version.toml")
-	if err != nil {
-		t.Fatalf("unexpected err: %s", err)
-	}
-	if guava, ok := got.Libraries["guava"]; !ok {
-		t.Fatalf("got: %v", got)
-	} else if !(guava.Name == "guava" && guava.Group == "com.google.guava") || guava.Version != "32.0.0-jre" {
-		t.Fatalf("Failed ")
-	}
+func TestParseCatalogMinimum(t *testing.T) {
+	got, err := ParseCatalog("../test/minimum.libs.version.toml")
+	assert.NoError(t, err)
+	assert.Empty(t, got.Versions)
+	assert.Empty(t, got.Plugins)
+	assert.Empty(t, got.Bundles)
+	assert.Equal(t, got.Libraries, map[string]Library{
+		"guava": {
+			Group:   "com.google.guava",
+			Name:    "guava",
+			Version: "32.0.0-jre",
+		},
+	})
 }
