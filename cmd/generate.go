@@ -53,19 +53,19 @@ var generateCommand = &cobra.Command{
 
 		catalog, err := extractVersionCatalog(foundFiles)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error during exracting libs.version.toml: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error during exracting libs.versions.toml  : %v\n", err)
 			return
 		}
 
 		err = WriteCatalog(catalogFile, catalog)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error during writing libs.version.toml: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error during writing libs.versions.toml  : %v\n", err)
 			return
 		}
 
 		fmt.Println("!!! DONE !!!")
 	},
-	Short: "Generate libs.version.toml",
+	Short: "Generate libs.versions.toml",
 }
 
 func init() {

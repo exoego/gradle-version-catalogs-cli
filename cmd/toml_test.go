@@ -9,7 +9,7 @@ import (
 )
 
 func TestReadCatalog(t *testing.T) {
-	got, err := ReadCatalog("../test/minimum.libs.version.toml")
+	got, err := ReadCatalog("../test/minimum.libs.versions.toml")
 	assert.NoError(t, err)
 	assert.Empty(t, got.Versions)
 	assert.Empty(t, got.Plugins)
@@ -55,18 +55,18 @@ func TestReadCatalog(t *testing.T) {
 
 func TestWriteCatalog(t *testing.T) {
 	tempdir := t.TempDir()
-	targetPath := filepath.Join(tempdir, "libs.version.toml")
+	targetPath := filepath.Join(tempdir, "libs.versions.toml")
 	tempfile, err := os.OpenFile(targetPath, os.O_TRUNC|os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
 	assert.NoError(t, err)
 
-	got, err := ReadCatalog("../test/writer.libs.version.toml")
+	got, err := ReadCatalog("../test/writer.libs.versions.toml")
 	assert.NoError(t, err)
 
 	err = WriteCatalog(tempfile, *got)
 	assert.NoError(t, err)
 	assert.NoError(t, tempfile.Close())
 
-	srcFile, err := os.OpenFile("../test/writer.libs.version.toml", os.O_RDONLY, 0644)
+	srcFile, err := os.OpenFile("../test/writer.libs.versions.toml", os.O_RDONLY, 0644)
 	assert.NoError(t, err)
 	srcContent, err := io.ReadAll(srcFile)
 	assert.NoError(t, err)
