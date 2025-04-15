@@ -1,4 +1,4 @@
-module github.com/skanehira/go-cli-template
+module github.com/exoego/go-cli-template
 
 go 1.23
 

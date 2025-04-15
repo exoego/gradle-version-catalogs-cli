@@ -25,8 +25,8 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X github.com/skanehira/rtty/cmd.Version={{.Version}}
-      - -X github.com/skanehira/rtty/cmd.Revision={{.ShortCommit}}
+      - -X github.com/exoego/rtty/cmd.Version={{.Version}}
+      - -X github.com/exoego/rtty/cmd.Revision={{.ShortCommit}}
 
 archives:
   - format: tar.gz
