@@ -1,8 +1,8 @@
 module github.com/exoego/gradle-verstion-catalog-generator
 
-go 1.23
+go 1.24
 
-toolchain go1.23.0
+toolchain go1.24.2
 
 require github.com/spf13/cobra v1.9.1
 
