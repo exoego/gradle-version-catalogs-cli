@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "go-cli-template",
+	Use: "gradle-verstion-catalog-generator",
 }
 
 func exitError(msg interface{}) {
