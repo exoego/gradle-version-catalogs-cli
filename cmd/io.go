@@ -89,7 +89,7 @@ func compieLibraryVersionExtractor() regexp.Regexp {
 	configPattern := strings.Join(getConfigurations(), "|")
 
 	// org.apache.httpcomponents:httpclient:4.5.13
-	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+):(?P<version>[^:\"']+)"
+	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+))?"
 
 	return *regexp.MustCompile(fmt.Sprintf(`(?:%s)\s*\(?["']?%s`, configPattern, libraryPattern))
 }
@@ -98,10 +98,16 @@ func extractVersion(extractor regexp.Regexp, text string) []Library {
 	allMatches := extractor.FindAllStringSubmatch(text, -1)
 	result := make([]Library, len(allMatches))
 	for i, match := range allMatches {
+		var version string
+		if match[3] == "" {
+			version = "FIXME"
+		} else {
+			version = match[3]
+		}
 		result[i] = Library{
 			Group:   match[1],
 			Name:    match[2],
-			Version: match[3],
+			Version: version,
 		}
 	}
 	return result

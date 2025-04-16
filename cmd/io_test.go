@@ -60,12 +60,14 @@ func TestVersionExtractor(t *testing.T) {
 	match := extractVersion(ext, `
 
 		implementation "foo:bar:1.2.3"
+		implementation "foo:no-version"
 		api 'foo-bar:quax:4.5.6-b'
 		testImplementation('a.b.c:foo-bar:1.2')
 
 	`)
 	assert.Equal(t, []Library{
 		{Group: "foo", Name: "bar", Version: "1.2.3"},
+		{Group: "foo", Name: "no-version", Version: "FIXME"},
 		{Group: "foo-bar", Name: "quax", Version: "4.5.6-b"},
 		{Group: "a.b.c", Name: "foo-bar", Version: "1.2"},
 	}, match)
