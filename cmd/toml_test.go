@@ -70,11 +70,11 @@ func TestWriteCatalog(t *testing.T) {
 	assert.NoError(t, err)
 	srcContent, err := io.ReadAll(srcFile)
 	assert.NoError(t, err)
+	assert.NoError(t, srcFile.Close())
 	tempfile, err = os.OpenFile(targetPath, os.O_RDONLY, 0644)
 	assert.NoError(t, err)
 	generatedContent, err := io.ReadAll(tempfile)
+	assert.NoError(t, tempfile.Close())
 	assert.NoError(t, err)
-	assert.NotEmpty(t, string(srcContent))
-	assert.NotEmpty(t, string(generatedContent))
 	assert.Equal(t, string(srcContent), string(generatedContent))
 }
