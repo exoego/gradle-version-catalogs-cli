@@ -6,6 +6,8 @@
 ![GitHub Release Status](https://img.shields.io/github/v/release/exoego/gradle-version-catalogs-cli)
 
 # gradle-version-catalogs-cli
+[![codecov](https://codecov.io/gh/exoego/gradle-version-catalogs-cli/graph/badge.svg?token=TP2GijRLFG)](https://codecov.io/gh/exoego/gradle-version-catalogs-cli)
+
 This template is help you to quick implement some CLI using Go.
 
 This repository is contains bellow.
