@@ -72,6 +72,7 @@ func TestVersionExtractor(t *testing.T) {
 			kotlin("jvm") version "2.1.20"
             // kotlin
 			id("org.jmailen.kotlinter") version "5.0.1"
+		    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.20-123"
 
             // groovy
 		    id 'com.gradleup.shadow' version '8.3.4'
@@ -95,6 +96,7 @@ func TestVersionExtractor(t *testing.T) {
 	}, versions)
 	assert.Equal(t, []Plugin{
 		{Id: "org.jmailen.kotlinter", Version: "5.0.1"},
+		{Id: "io.swagger.core.v3.swagger-gradle-plugin", Version: "2.2.20-123"},
 		{Id: "com.gradleup.shadow", Version: "8.3.4"},
 	}, plugins)
 }

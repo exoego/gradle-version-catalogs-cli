@@ -79,6 +79,9 @@ func getConfigurations() []string {
 		"implementation",
 		"compileOnly",
 		"compileOnlyApi",
+		"platform",
+		"integrationTestImplementation",
+		"integrationTestRuntimeOnly",
 		"runtimeOnly",
 		"testImplementation",
 		"testCompileOnly",
@@ -104,7 +107,7 @@ func compieLibraryVersionExtractor() regexp.Regexp {
 }
 
 func compilePluginExtractor() regexp.Regexp {
-	return *regexp.MustCompile(`(\W)id\W+(?P<id>[\w.]+)\W+version\W+(?P<version>[\w.]+)["')]+`)
+	return *regexp.MustCompile(`(\W)id\W+(?P<id>[\w.-]+)\W+version\W+(?P<version>[\w.-]+)["')]+`)
 }
 
 func compileVersionVariableExtractor(keys []string) regexp.Regexp {
