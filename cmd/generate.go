@@ -57,6 +57,12 @@ var generateCommand = &cobra.Command{
 			return
 		}
 
+		err = embedReferenceToLibs(foundFiles, catalog)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error while rewriting build files  : %v\n", err)
+			return
+		}
+
 		err = WriteCatalog(catalogFile, catalog)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error during writing libs.versions.toml  : %v\n", err)

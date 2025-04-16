@@ -86,10 +86,21 @@ func getConfigurations() []string {
 	}
 }
 
+type StaticExtractors struct {
+	plugin, library regexp.Regexp
+}
+
+func getStaticExtractors() StaticExtractors {
+	return StaticExtractors{
+		plugin:  compilePluginExtractor(),
+		library: compieLibraryVersionExtractor(),
+	}
+}
+
 func compieLibraryVersionExtractor() regexp.Regexp {
 	configPattern := strings.Join(getConfigurations(), "|")
 	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+))?"
-	return *regexp.MustCompile(fmt.Sprintf(`(?:%s)\s*\(?["']?%s`, configPattern, libraryPattern))
+	return *regexp.MustCompile(fmt.Sprintf(`(?P<config>%s)\s*\(?["']%s["']\)?`, configPattern, libraryPattern))
 }
 
 func compilePluginExtractor() regexp.Regexp {
@@ -101,21 +112,21 @@ func compileVersionVariableExtractor(keys []string) regexp.Regexp {
 	return *regexp.MustCompile(fmt.Sprintf(`\W(%s)\W?=\W*["']([^"']+)["']`, combinedKeys))
 }
 
-func extractTemp(libraryExtractor regexp.Regexp, pluginExtractor regexp.Regexp, text string) (Versions, []Plugin, []Library) {
+func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, []Library) {
 	versions := make(Versions, 0)
 
-	allMatchedLibs := libraryExtractor.FindAllStringSubmatch(text, -1)
+	allMatchedLibs := extractor.library.FindAllStringSubmatch(text, -1)
 	libs := make([]Library, len(allMatchedLibs))
 	for i, match := range allMatchedLibs {
 		var version string
-		if match[3] == "" {
+		if match[4] == "" {
 			version = "FIXME"
 		} else {
-			version = match[3]
+			version = match[4]
 		}
 		libs[i] = Library{
-			Group:   match[1],
-			Name:    match[2],
+			Group:   match[2],
+			Name:    match[3],
 			Version: version,
 		}
 
@@ -125,7 +136,7 @@ func extractTemp(libraryExtractor regexp.Regexp, pluginExtractor regexp.Regexp, 
 		}
 	}
 
-	allMatchedPlugins := pluginExtractor.FindAllStringSubmatch(text, -1)
+	allMatchedPlugins := extractor.plugin.FindAllStringSubmatch(text, -1)
 	plugins := make([]Plugin, len(allMatchedPlugins))
 	for i, match := range allMatchedPlugins {
 		plugins[i] = Plugin{
@@ -202,10 +213,39 @@ func initVersionCatalog() VersionCatalog {
 	return catalog
 }
 
+func embedReferenceToLibs(buildFilePaths []string, catalog VersionCatalog) error {
+	extractor := getStaticExtractors()
+
+	for _, buildFilePath := range buildFilePaths {
+		bytes, err := os.ReadFile(buildFilePath)
+		if err != nil {
+			return err
+		}
+		oldContent := string(bytes)
+		fmt.Printf("old content len %v, content ", len(oldContent))
+
+		newContent := extractor.library.ReplaceAllStringFunc(oldContent, func(s string) string {
+			match := extractor.library.FindStringSubmatch(s)
+			config := match[1]
+			key := strings.ReplaceAll(catalogSafeKey(Library{
+				Group:   match[2],
+				Name:    match[3],
+				Version: "",
+			}), "-", ".")
+			return fmt.Sprintf("%s(libs.%s)", config, key)
+		})
+
+		err = os.WriteFile(buildFilePath, []byte(newContent), 0644)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 	catalog := initVersionCatalog()
-	libExtractor := compieLibraryVersionExtractor()
-	pluginExtractor := compilePluginExtractor()
+	extractor := getStaticExtractors()
 
 	versionsAggregated := make(Versions, 0)
 	librariesAggregated := make([]Library, 0)
@@ -221,7 +261,7 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 			return catalog, err
 		}
 		content := string(bytes)
-		versions, plugins, libraries := extractTemp(libExtractor, pluginExtractor, content)
+		versions, plugins, libraries := extractTemp(extractor, content)
 		librariesAggregated = append(librariesAggregated, libraries...)
 		pluginsAggregated = append(pluginsAggregated, plugins...)
 		maps.Copy(versionsAggregated, versions)

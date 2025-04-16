@@ -56,9 +56,8 @@ func TestFindBuildGradle(t *testing.T) {
 }
 
 func TestVersionExtractorEmpty(t *testing.T) {
-	ext := compieLibraryVersionExtractor()
-	ext2 := compilePluginExtractor()
-	versions, plugins, libs := extractTemp(ext, ext2, `
+	ext := getStaticExtractors()
+	versions, plugins, libs := extractTemp(ext, `
 
 	`)
 	assert.Equal(t, []Library{}, libs)
@@ -67,9 +66,8 @@ func TestVersionExtractorEmpty(t *testing.T) {
 }
 
 func TestVersionExtractor(t *testing.T) {
-	ext := compieLibraryVersionExtractor()
-	ext2 := compilePluginExtractor()
-	versions, plugins, libs := extractTemp(ext, ext2, `	
+	ext := getStaticExtractors()
+	versions, plugins, libs := extractTemp(ext, `	
 		plugins {
 			kotlin("jvm") version "2.1.20"
             // kotlin
