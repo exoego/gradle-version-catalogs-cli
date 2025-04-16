@@ -14,7 +14,7 @@ func TestReadCatalog(t *testing.T) {
 	assert.Empty(t, got.Versions)
 	assert.Empty(t, got.Plugins)
 	assert.Empty(t, got.Bundles)
-	assert.Equal(t, map[string]map[string]any{
+	assert.Equal(t, Libraries{
 		"guava": {
 			"group":   "com.google.guava",
 			"name":    "guava",
