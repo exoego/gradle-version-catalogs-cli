@@ -25,7 +25,7 @@ func TestFindBuildGradle(t *testing.T) {
 
 	writeFile(t, tempdir, "build.gradle", "")
 	writeFile(t, tempdir, "foo/build.gradle", "")
-	writeFile(t, tempdir, "bar/build.gradle", "")
+	writeFile(t, tempdir, "bar/build.gradle.kts", "")
 	writeFile(t, tempdir, "bar/bar/build.gradle", "")
 	writeFile(t, tempdir, "bar/bar/bar/build.gradle", "")
 	writeFile(t, tempdir, "bar/bar/bar/bar/build.gradle", "")
@@ -53,6 +53,21 @@ func TestFindBuildGradle(t *testing.T) {
 	actual, err = findBuildGradle(tempdir, 5, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 6, len(actual))
+}
+
+func TestExcludeRootSettings(t *testing.T) {
+	tempdir := t.TempDir()
+
+	writeFile(t, tempdir, "build.gradle", "")
+	writeFile(t, tempdir, "settings.gradle.kts", "")
+	writeFile(t, tempdir, "settings.gradle", "")
+	writeFile(t, tempdir, "foo/build.gradle", "")
+	writeFile(t, tempdir, "foo/settings.gradle", "")
+	writeFile(t, tempdir, "foo/settings.gradle.kts", "")
+
+	actual, err := findBuildGradle(tempdir, 3, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(actual))
 }
 
 func TestVersionExtractorEmpty(t *testing.T) {
