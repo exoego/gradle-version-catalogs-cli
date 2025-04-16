@@ -55,9 +55,30 @@ func TestFindBuildGradle(t *testing.T) {
 	assert.Equal(t, 6, len(actual))
 }
 
+func TestVersionExtractorEmpty(t *testing.T) {
+	ext := compieLibraryVersionExtractor()
+	ext2 := compilePluginExtractor()
+	versions, plugins, libs := extractTemp(ext, ext2, `
+
+	`)
+	assert.Equal(t, []Library{}, libs)
+	assert.Equal(t, Versions{}, versions)
+	assert.Equal(t, []Plugin{}, plugins)
+}
+
 func TestVersionExtractor(t *testing.T) {
 	ext := compieLibraryVersionExtractor()
-	versions, libs := extractVersion(ext, `
+	ext2 := compilePluginExtractor()
+	versions, plugins, libs := extractTemp(ext, ext2, `	
+		plugins {
+			kotlin("jvm") version "2.1.20"
+            // kotlin
+			id("org.jmailen.kotlinter") version "5.0.1"
+
+            // groovy
+		    id 'com.gradleup.shadow' version '8.3.4'
+		}
+
 		implementation "foo:bar:1.2.3"
 		implementation "foo:no-version"
 		implementation "foo:variable:$myVar"
@@ -74,6 +95,10 @@ func TestVersionExtractor(t *testing.T) {
 	assert.Equal(t, Versions{
 		"myVar": "FIXME",
 	}, versions)
+	assert.Equal(t, []Plugin{
+		{Id: "org.jmailen.kotlinter", Version: "5.0.1"},
+		{Id: "com.gradleup.shadow", Version: "8.3.4"},
+	}, plugins)
 }
 
 func TestUpdateCatalog(t *testing.T) {

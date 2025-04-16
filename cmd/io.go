@@ -88,11 +88,12 @@ func getConfigurations() []string {
 
 func compieLibraryVersionExtractor() regexp.Regexp {
 	configPattern := strings.Join(getConfigurations(), "|")
-
-	// org.apache.httpcomponents:httpclient:4.5.13
 	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+))?"
-
 	return *regexp.MustCompile(fmt.Sprintf(`(?:%s)\s*\(?["']?%s`, configPattern, libraryPattern))
+}
+
+func compilePluginExtractor() regexp.Regexp {
+	return *regexp.MustCompile(`\Wid\W+(?P<id>[\w.]+)\W+version\W+(?P<version>[\w.]+)`)
 }
 
 func compileVersionVariableExtractor(keys []string) regexp.Regexp {
@@ -100,11 +101,12 @@ func compileVersionVariableExtractor(keys []string) regexp.Regexp {
 	return *regexp.MustCompile(fmt.Sprintf(`\W(%s)\W?=\W*["']([^"']+)["']`, combinedKeys))
 }
 
-func extractVersion(extractor regexp.Regexp, text string) (Versions, []Library) {
-	allMatches := extractor.FindAllStringSubmatch(text, -1)
-	libs := make([]Library, len(allMatches))
+func extractTemp(libraryExtractor regexp.Regexp, pluginExtractor regexp.Regexp, text string) (Versions, []Plugin, []Library) {
 	versions := make(Versions, 0)
-	for i, match := range allMatches {
+
+	allMatchedLibs := libraryExtractor.FindAllStringSubmatch(text, -1)
+	libs := make([]Library, len(allMatchedLibs))
+	for i, match := range allMatchedLibs {
 		var version string
 		if match[3] == "" {
 			version = "FIXME"
@@ -122,7 +124,17 @@ func extractVersion(extractor regexp.Regexp, text string) (Versions, []Library) 
 			versions[key] = "FIXME"
 		}
 	}
-	return versions, libs
+
+	allMatchedPlugins := pluginExtractor.FindAllStringSubmatch(text, -1)
+	plugins := make([]Plugin, len(allMatchedPlugins))
+	for i, match := range allMatchedPlugins {
+		plugins[i] = Plugin{
+			Id:      match[1],
+			Version: match[2],
+		}
+	}
+
+	return versions, plugins, libs
 }
 
 var variableNameExtractor = regexp.MustCompile(`^\$(?:\{(.+)}|([^{}]+))$`)
@@ -152,6 +164,11 @@ var nonIdChars = regexp.MustCompile("[^a-zA-Z0-9_-]+")
 func catalogSafeKey(lib Library) string {
 	combined := fmt.Sprintf("%s.%s", lib.Group, lib.Name)
 	hyphenated := nonIdChars.ReplaceAllString(combined, "-")
+	return strcase.KebabCase(hyphenated)
+}
+
+func catalogSafeKeyPlugin(lib Plugin) string {
+	hyphenated := nonIdChars.ReplaceAllString(lib.Id, "-")
 	return strcase.KebabCase(hyphenated)
 }
 
@@ -187,10 +204,12 @@ func initVersionCatalog() VersionCatalog {
 
 func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 	catalog := initVersionCatalog()
-	extractor := compieLibraryVersionExtractor()
+	libExtractor := compieLibraryVersionExtractor()
+	pluginExtractor := compilePluginExtractor()
 
 	versionsAggregated := make(Versions, 0)
 	librariesAggregated := make([]Library, 0)
+	pluginsAggregated := make([]Plugin, 0)
 
 	for _, path := range buildFilePaths {
 		file, err := os.OpenFile(path, os.O_RDONLY, 0444)
@@ -202,8 +221,9 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 			return catalog, err
 		}
 		content := string(bytes)
-		versions, libraries := extractVersion(extractor, content)
+		versions, plugins, libraries := extractTemp(libExtractor, pluginExtractor, content)
 		librariesAggregated = append(librariesAggregated, libraries...)
+		pluginsAggregated = append(pluginsAggregated, plugins...)
 		maps.Copy(versionsAggregated, versions)
 	}
 
@@ -226,6 +246,13 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 			}
 			content := string(bytes)
 			extractVersioVariables(versionsAggregated, versionVariableExtractor, content)
+		}
+	}
+
+	if len(pluginsAggregated) > 0 {
+		for _, plugin := range pluginsAggregated {
+			key := catalogSafeKeyPlugin(plugin)
+			catalog.Plugins[key] = plugin
 		}
 	}
 
