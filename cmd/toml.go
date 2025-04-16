@@ -68,17 +68,17 @@ func writeVersions(writer io.StringWriter, versions Versions) error {
 	if len(versions) == 0 {
 		return nil
 	}
-	_, err := writer.WriteString("[versions]\n")
+	_, err := writer.WriteString(fmt.Sprintf("[versions]%s", LineBreak))
 	if err != nil {
 		return err
 	}
 	for _, k := range slices.Sorted(maps.Keys(versions)) {
-		_, err := writer.WriteString(fmt.Sprintf("%s = %s\n", k, strconv.Quote(versions[k])))
+		_, err := writer.WriteString(fmt.Sprintf("%s = %s%s", k, strconv.Quote(versions[k]), LineBreak))
 		if err != nil {
 			return err
 		}
 	}
-	_, err = writer.WriteString("\n")
+	_, err = writer.WriteString(LineBreak)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func writeLibraries(writer io.StringWriter, libraries Libraries) error {
 	if len(libraries) <= 0 {
 		return nil
 	}
-	_, err := writer.WriteString("[libraries]\n")
+	_, err := writer.WriteString(fmt.Sprintf("[libraries]%s", LineBreak))
 	if err != nil {
 		return err
 	}
@@ -162,12 +162,12 @@ func writeLibraries(writer io.StringWriter, libraries Libraries) error {
 			}
 		}
 
-		_, err = writer.WriteString(" }\n")
+		_, err = writer.WriteString(fmt.Sprintf(" }%s", LineBreak))
 		if err != nil {
 			return err
 		}
 	}
-	_, err = writer.WriteString("\n")
+	_, err = writer.WriteString(LineBreak)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func writeBundles(writer io.StringWriter, bundles Bundles) error {
 	if len(bundles) == 0 {
 		return nil
 	}
-	_, err := writer.WriteString("[bundles]\n")
+	_, err := writer.WriteString(fmt.Sprintf("[bundles]%s", LineBreak))
 	if err != nil {
 		return err
 	}
@@ -188,12 +188,12 @@ func writeBundles(writer io.StringWriter, bundles Bundles) error {
 		for i, s := range v {
 			quoted[i] = strconv.Quote(s)
 		}
-		_, err := writer.WriteString(fmt.Sprintf("%s = [%s]\n", k, strings.Join(quoted, ", ")))
+		_, err := writer.WriteString(fmt.Sprintf("%s = [%s]%s", k, strings.Join(quoted, ", "), LineBreak))
 		if err != nil {
 			return err
 		}
 	}
-	_, err = writer.WriteString("\n")
+	_, err = writer.WriteString(LineBreak)
 	if err != nil {
 		return err
 	}
@@ -204,14 +204,16 @@ func writePlugins(writer io.StringWriter, plugins Plugins) error {
 	if len(plugins) == 0 {
 		return nil
 	}
-	_, err := writer.WriteString("[plugins]\n")
+	_, err := writer.WriteString(fmt.Sprintf("[plugins]%s", LineBreak))
 	if err != nil {
 		return err
 	}
 	for _, k := range slices.Sorted(maps.Keys(plugins)) {
 		plugin := plugins[k]
-		_, err := writer.WriteString(fmt.Sprintf("%s = { id = %s, version = %s }\n", k,
-			strconv.Quote(plugin.Id), strconv.Quote(plugin.Version)))
+		_, err := writer.WriteString(fmt.Sprintf("%s = { id = %s, version = %s }%s", k,
+			strconv.Quote(plugin.Id),
+			strconv.Quote(plugin.Version),
+			LineBreak))
 		if err != nil {
 			return err
 		}
