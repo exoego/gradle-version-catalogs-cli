@@ -123,11 +123,22 @@ func catalogSafeKey(lib Library) string {
 
 func updateCatalog(catalog VersionCatalog, libraries []Library) {
 	for _, lib := range libraries {
+		var version any
+		if strings.HasPrefix(lib.Version, "$") {
+			trimmedVersion := lib.Version[1:]
+			catalog.Versions[trimmedVersion] = "FIXME"
+			version = map[string]any{
+				"ref": trimmedVersion,
+			}
+		} else {
+			version = lib.Version
+		}
+
 		key := catalogSafeKey(lib)
 		catalog.Libraries[key] = map[string]any{
 			"group":   lib.Group,
 			"name":    lib.Name,
-			"version": lib.Version,
+			"version": version,
 		}
 	}
 }

@@ -61,6 +61,7 @@ func TestVersionExtractor(t *testing.T) {
 
 		implementation "foo:bar:1.2.3"
 		implementation "foo:no-version"
+		implementation "foo:variable:$myVar"
 		api 'foo-bar:quax:4.5.6-b'
 		testImplementation('a.b.c:foo-bar:1.2')
 
@@ -68,6 +69,7 @@ func TestVersionExtractor(t *testing.T) {
 	assert.Equal(t, []Library{
 		{Group: "foo", Name: "bar", Version: "1.2.3"},
 		{Group: "foo", Name: "no-version", Version: "FIXME"},
+		{Group: "foo", Name: "variable", Version: "$myVar"},
 		{Group: "foo-bar", Name: "quax", Version: "4.5.6-b"},
 		{Group: "a.b.c", Name: "foo-bar", Version: "1.2"},
 	}, match)
@@ -84,12 +86,47 @@ func TestUpdateCatalog(t *testing.T) {
 		{Group: "foo", Name: "bar", Version: "1.1"},
 		{Group: "com.example.a123", Name: "d_A_S_h", Version: "1.2.3-M4"},
 	})
+	assert.Empty(t, catalog.Versions)
 	// key is kebab-case
 	assert.Equal(t, Libraries{
 		"foo-bar": {
 			"group":   "foo",
 			"name":    "bar",
 			"version": "1.1",
+		},
+		"com-example-a123-d-a-s-h": {
+			"group":   "com.example.a123",
+			"name":    "d_A_S_h",
+			"version": "1.2.3-M4",
+		},
+	}, catalog.Libraries)
+
+	updateCatalog(catalog, []Library{
+		{Group: "foo", Name: "variable", Version: "$myVar"},
+		{Group: "foo", Name: "variable-2", Version: "$myVar"},
+	})
+	assert.Equal(t, Versions{
+		"myVar": "FIXME",
+	}, catalog.Versions)
+	assert.Equal(t, Libraries{
+		"foo-bar": {
+			"group":   "foo",
+			"name":    "bar",
+			"version": "1.1",
+		},
+		"foo-variable": {
+			"group": "foo",
+			"name":  "variable",
+			"version": map[string]string{
+				"ref": "myVar",
+			},
+		},
+		"foo-variable-2": {
+			"group": "foo",
+			"name":  "variable-2",
+			"version": map[string]string{
+				"ref": "myVar",
+			},
 		},
 		"com-example-a123-d-a-s-h": {
 			"group":   "com.example.a123",
