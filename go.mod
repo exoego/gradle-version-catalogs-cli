@@ -1,4 +1,4 @@
-module github.com/exoego/gradle-version-catalog-generator
+module github.com/exoego/gradle-version-catalogs-cli
 
 go 1.24
 
