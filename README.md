@@ -8,7 +8,31 @@
 
 # gradle-version-catalogs-cli
 
-Generate [libs.version.toml (Version Catalogs)](https://docs.gradle.org/current/userguide/version_catalogs.html) from existing Gradle build files.
+- Generate [libs.version.toml (Version Catalogs)](https://docs.gradle.org/current/userguide/version_catalogs.html) from existing Gradle build files.
+- And replace the dependencies in the build files build.gradle(.kts) with the version catalog.
+
+
+```Kotlin
+// Before 
+val awsSdkVersion = "2.3.4"
+implementation("software.amazon.awssdk:sts:$awsSdkVersion")
+implementation("software.amazon.awssdk:dynamodb:$awsSdkVersion")
+
+// After
+implementation(libs.software.amazon.awssdk.sts)
+implementation(libs.software.amazon.awssdk.dynamodb)
+```
+
+with `libs.versions.toml`: 
+
+```toml
+[versions]
+awsSdkVersion = "2.25.1"
+
+[dependencies]
+software-amazon-awssdk-dynamodb = { group = "software.amazon.awssdk", name = "dynamodb", version.ref = "awsSdkVersion" }
+software-amazon-awssdk-sts = { group = "software.amazon.awssdk", name = "sts", version.ref = "awsSdkVersion" }
+```
 
 ## Usage
 
