@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/stoewer/go-strcase"
 	"io"
 	"os"
 	"path/filepath"
@@ -106,13 +107,36 @@ func extractVersion(extractor regexp.Regexp, text string) []Library {
 	return result
 }
 
-func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
+var nonIdChars = regexp.MustCompile("[^a-zA-Z0-9_-]+")
+
+func catalogSafeKey(lib Library) string {
+	combined := fmt.Sprintf("%s.%s", lib.Group, lib.Name)
+	hyphenated := nonIdChars.ReplaceAllString(combined, "-")
+	return strcase.KebabCase(hyphenated)
+}
+
+func updateCatalog(catalog VersionCatalog, libraries []Library) {
+	for _, lib := range libraries {
+		key := catalogSafeKey(lib)
+		catalog.Libraries[key] = map[string]any{
+			"group":   lib.Group,
+			"name":    lib.Name,
+			"version": lib.Version,
+		}
+	}
+}
+
+func initVersionCatalog() VersionCatalog {
 	catalog := VersionCatalog{}
 	catalog.Libraries = make(Libraries, 0)
 	catalog.Bundles = make(Bundles, 0)
 	catalog.Versions = make(Versions, 0)
 	catalog.Plugins = make(Plugins, 0)
+	return catalog
+}
 
+func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
+	catalog := initVersionCatalog()
 	extractor := compieLibraryVersionExtractor()
 
 	for _, path := range buildFilePaths {
@@ -126,14 +150,7 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 		}
 		content := string(bytes)
 		libraries := extractVersion(extractor, content)
-		for _, lib := range libraries {
-			key := fmt.Sprintf("%s%s", lib.Group, lib.Name)
-			catalog.Libraries[key] = map[string]any{
-				"group":   lib.Group,
-				"name":    lib.Name,
-				"version": lib.Version,
-			}
-		}
+		updateCatalog(catalog, libraries)
 	}
 
 	return catalog, nil

@@ -70,3 +70,29 @@ func TestVersionExtractor(t *testing.T) {
 		{Group: "a.b.c", Name: "foo-bar", Version: "1.2"},
 	}, match)
 }
+
+func TestUpdateCatalog(t *testing.T) {
+	catalog := initVersionCatalog()
+	assert.Empty(t, catalog.Libraries)
+
+	updateCatalog(catalog, []Library{})
+	assert.Empty(t, catalog.Libraries)
+
+	updateCatalog(catalog, []Library{
+		{Group: "foo", Name: "bar", Version: "1.1"},
+		{Group: "com.example.a123", Name: "d_A_S_h", Version: "1.2.3-M4"},
+	})
+	// key is kebab-case
+	assert.Equal(t, Libraries{
+		"foo-bar": {
+			"group":   "foo",
+			"name":    "bar",
+			"version": "1.1",
+		},
+		"com-example-a123-d-a-s-h": {
+			"group":   "com.example.a123",
+			"name":    "d_A_S_h",
+			"version": "1.2.3-M4",
+		},
+	}, catalog.Libraries)
+}
