@@ -1,0 +1,20 @@
+[versions]
+a = "1.0"
+aa = "2.0"
+aaa = "3.0"
+b = "4.0"
+bb = "5.0"
+
+[libraries]
+awsJavaSdkDynamodb = { module = "com.amazonaws:aws-java-sdk-dynamodb", version.ref = "awsJavaSdk" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version = { strictly = "[3.8, 4.0[", prefer = "3.9" } }
+foo-bar = { group = "org.example", name = "foo-bar", version.ref = "bar" }
+guava = { group = "com.google.guava", name = "guava", version = "32.0.0-jre" }
+mylib-full-format = { group = "com.mycompany", name = "alternate", version = { require = "1.4", reject = "1.4.0", rejectAll = false } }
+
+[bundles]
+x = ["guava", "foo-bar"]
+y = ["commons-lang3"]
+
+[plugins]
+shadowJar = { id = "com.gradleup.shadow", version = "8.3.5" }

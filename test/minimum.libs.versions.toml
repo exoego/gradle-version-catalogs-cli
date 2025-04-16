@@ -1,0 +1,7 @@
+# minimum
+[libraries]
+guava = { group = "com.google.guava", name = "guava", version = "32.0.0-jre" }
+foo-bar = { group = "org.example", name = "foo-bar", version.ref = "bar" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version = { strictly = "[3.8, 4.0[", prefer="3.9" } }
+awsJavaSdkDynamodb = { module = "com.amazonaws:aws-java-sdk-dynamodb", version.ref = "awsJavaSdk" }
+mylib-full-format = { group = "com.mycompany", name = "alternate", version = { require = "1.4", reject = "1.4.0", rejectAll = false } }
