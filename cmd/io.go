@@ -104,7 +104,7 @@ func compieLibraryVersionExtractor() regexp.Regexp {
 }
 
 func compilePluginExtractor() regexp.Regexp {
-	return *regexp.MustCompile(`\Wid\W+(?P<id>[\w.]+)\W+version\W+(?P<version>[\w.]+)`)
+	return *regexp.MustCompile(`(\W)id\W+(?P<id>[\w.]+)\W+version\W+(?P<version>[\w.]+)["')]+`)
 }
 
 func compileVersionVariableExtractor(keys []string) regexp.Regexp {
@@ -140,8 +140,8 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 	plugins := make([]Plugin, len(allMatchedPlugins))
 	for i, match := range allMatchedPlugins {
 		plugins[i] = Plugin{
-			Id:      match[1],
-			Version: match[2],
+			Id:      match[2],
+			Version: match[3],
 		}
 	}
 
@@ -221,21 +221,31 @@ func embedReferenceToLibs(buildFilePaths []string, catalog VersionCatalog) error
 		if err != nil {
 			return err
 		}
-		oldContent := string(bytes)
-		fmt.Printf("old content len %v, content ", len(oldContent))
+		content := string(bytes)
+		fmt.Printf("old content len %v, content ", len(content))
 
-		newContent := extractor.library.ReplaceAllStringFunc(oldContent, func(s string) string {
+		content = extractor.library.ReplaceAllStringFunc(content, func(s string) string {
 			match := extractor.library.FindStringSubmatch(s)
 			config := match[1]
 			key := strings.ReplaceAll(catalogSafeKey(Library{
 				Group:   match[2],
 				Name:    match[3],
-				Version: "",
+				Version: match[4],
 			}), "-", ".")
 			return fmt.Sprintf("%s(libs.%s)", config, key)
 		})
 
-		err = os.WriteFile(buildFilePath, []byte(newContent), 0644)
+		content = extractor.plugin.ReplaceAllStringFunc(content, func(s string) string {
+			match := extractor.plugin.FindStringSubmatch(s)
+			key := strings.ReplaceAll(catalogSafeKeyPlugin(Plugin{
+				Id:      match[2],
+				Version: match[3],
+			}), "-", ".")
+			leading := match[1]
+			return fmt.Sprintf("%salias(libs.plugins.%s)", leading, key)
+		})
+
+		err = os.WriteFile(buildFilePath, []byte(content), 0644)
 		if err != nil {
 			return err
 		}
