@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/stoewer/go-strcase"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -94,9 +95,15 @@ func compieLibraryVersionExtractor() regexp.Regexp {
 	return *regexp.MustCompile(fmt.Sprintf(`(?:%s)\s*\(?["']?%s`, configPattern, libraryPattern))
 }
 
-func extractVersion(extractor regexp.Regexp, text string) []Library {
+func compileVersionVariableExtractor(keys []string) regexp.Regexp {
+	combinedKeys := strings.Join(keys, "|")
+	return *regexp.MustCompile(fmt.Sprintf(`\W(%s)\W?=\W*["']([^"']+)["']`, combinedKeys))
+}
+
+func extractVersion(extractor regexp.Regexp, text string) (Versions, []Library) {
 	allMatches := extractor.FindAllStringSubmatch(text, -1)
-	result := make([]Library, len(allMatches))
+	libs := make([]Library, len(allMatches))
+	versions := make(Versions, 0)
 	for i, match := range allMatches {
 		var version string
 		if match[3] == "" {
@@ -104,13 +111,26 @@ func extractVersion(extractor regexp.Regexp, text string) []Library {
 		} else {
 			version = match[3]
 		}
-		result[i] = Library{
+		libs[i] = Library{
 			Group:   match[1],
 			Name:    match[2],
 			Version: version,
 		}
+
+		if strings.HasPrefix(version, "$") {
+			versions[version[1:]] = "FIXME"
+		}
 	}
-	return result
+	return versions, libs
+}
+
+func extractVersioVariables(versions Versions, extractor regexp.Regexp, text string) {
+	allMatches := extractor.FindAllStringSubmatch(text, -1)
+	for _, match := range allMatches {
+		key := match[1]
+		version := match[2]
+		versions[key] = version
+	}
 }
 
 var nonIdChars = regexp.MustCompile("[^a-zA-Z0-9_-]+")
@@ -126,7 +146,6 @@ func updateCatalog(catalog VersionCatalog, libraries []Library) {
 		var version any
 		if strings.HasPrefix(lib.Version, "$") {
 			trimmedVersion := lib.Version[1:]
-			catalog.Versions[trimmedVersion] = "FIXME"
 			version = map[string]any{
 				"ref": trimmedVersion,
 			}
@@ -156,6 +175,9 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 	catalog := initVersionCatalog()
 	extractor := compieLibraryVersionExtractor()
 
+	versionsAggregated := make(Versions, 0)
+	librariesAggregated := make([]Library, 0)
+
 	for _, path := range buildFilePaths {
 		file, err := os.OpenFile(path, os.O_RDONLY, 0444)
 		if err != nil {
@@ -166,9 +188,35 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 			return catalog, err
 		}
 		content := string(bytes)
-		libraries := extractVersion(extractor, content)
-		updateCatalog(catalog, libraries)
+		versions, libraries := extractVersion(extractor, content)
+		librariesAggregated = append(librariesAggregated, libraries...)
+		maps.Copy(versionsAggregated, versions)
 	}
+
+	if len(versionsAggregated) > 0 {
+		keys := make([]string, 0, len(versionsAggregated))
+		for k := range versionsAggregated {
+			keys = append(keys, k)
+		}
+		versionVariableExtractor := compileVersionVariableExtractor(keys)
+
+		// two-path since version variable may be defined in other files
+		for _, path := range buildFilePaths {
+			file, err := os.OpenFile(path, os.O_RDONLY, 0444)
+			if err != nil {
+				return catalog, err
+			}
+			bytes, err := io.ReadAll(file)
+			if err != nil {
+				return catalog, err
+			}
+			content := string(bytes)
+			extractVersioVariables(versionsAggregated, versionVariableExtractor, content)
+		}
+	}
+
+	catalog.Versions = versionsAggregated
+	updateCatalog(catalog, librariesAggregated)
 
 	return catalog, nil
 }
