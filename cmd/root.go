@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "gradle-verstion-catalog-generator",
+	Use: "gradle-version-catalog-generator",
 }
 
 func exitError(msg interface{}) {
