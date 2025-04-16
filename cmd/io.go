@@ -58,8 +58,15 @@ func findBuildGradle(root string, depth int, currentDepth int) ([]string, error)
 	}
 
 	for _, entry := range entries {
-		path := filepath.Join(root, entry.Name())
-		if !entry.IsDir() && (strings.HasSuffix(entry.Name(), ".gradle") || strings.HasSuffix(entry.Name(), ".gradle.kts")) {
+		name := entry.Name()
+		path := filepath.Join(root, name)
+		if !entry.IsDir() && (strings.HasSuffix(name, ".gradle") || strings.HasSuffix(name, ".gradle.kts")) {
+			baseName := filepath.Base(path)
+			if currentDepth == 0 && (baseName == "settings.gradle" || baseName == "settings.gradle.kts") {
+				// Skip the root settings.gradle file
+				// https://discuss.gradle.org/t/how-to-use-version-catalog-in-the-root-settings-gradle-kts-file/44603/2
+				continue
+			}
 			buildGradleFiles = append(buildGradleFiles, path)
 		} else if entry.IsDir() {
 			subFiles, err := findBuildGradle(path, depth, currentDepth+1)
