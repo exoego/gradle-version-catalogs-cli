@@ -64,6 +64,7 @@ var generateCommand = &cobra.Command{
 		}
 
 		fmt.Println("!!! DONE !!!")
+		fmt.Printf("Generated: %s", catalogFile.Name())
 	},
 	Short: "Generate libs.versions.toml",
 }
