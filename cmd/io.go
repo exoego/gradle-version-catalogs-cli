@@ -118,10 +118,24 @@ func extractVersion(extractor regexp.Regexp, text string) (Versions, []Library) 
 		}
 
 		if strings.HasPrefix(version, "$") {
-			versions[version[1:]] = "FIXME"
+			key := extractVariableName(version)
+			versions[key] = "FIXME"
 		}
 	}
 	return versions, libs
+}
+
+var variableNameExtractor = regexp.MustCompile(`^\$(?:\{(.+)}|([^{}]+))$`)
+
+func extractVariableName(name string) string {
+	submatch := variableNameExtractor.FindStringSubmatch(name)
+	if len(submatch[1]) > 0 {
+		return submatch[1]
+	}
+	if len(submatch[2]) > 0 {
+		return submatch[2]
+	}
+	return name
 }
 
 func extractVersioVariables(versions Versions, extractor regexp.Regexp, text string) {
