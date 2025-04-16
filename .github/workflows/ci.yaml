@@ -46,6 +46,9 @@ jobs:
         if: ${{ steps.setup-go.outputs.cache-hit != 'true' }}
         run: go mod download
       - name: go test
-        run: go test -v ./... -coverprofile=coverage.out
-      - uses: k1LoW/octocov-action@v1
-        if: runner.os == 'Linux'
+        run: go test -v ./... -covermode=atomic -coverprofile=coverage.out
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
+        with:
+          files: ./coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
