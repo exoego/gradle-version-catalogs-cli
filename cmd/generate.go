@@ -24,65 +24,54 @@ Caution:
 		}
 		return nil
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		gradleProjectRootPath, err := getWorkingDirectory(args)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			return
+			return err
 		}
 
 		catalogFile, err := openVersionCatalogFile(gradleProjectRootPath)
-		defer func(catalogFile *os.File) {
-			err := catalogFile.Close()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				return
-			}
-		}(catalogFile)
-
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			return
+			return err
+		}
+		defer func(catalogFile *os.File) {
+			err = catalogFile.Close()
+		}(catalogFile)
+		if err != nil {
+			return err
 		}
 
 		foundFiles, err := findBuildGradle(gradleProjectRootPath, 3, 0)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error during listing up build.gradle files: %v\n", err)
-			return
+			return fmt.Errorf("error during listing up build.gradle files: %w", err)
 		}
 
-		if len(foundFiles) > 0 {
-			fmt.Println("Found build.gradle files:")
-			for _, file := range foundFiles {
-				fmt.Println(file)
-			}
-		} else {
-			fmt.Printf("No build.gradle files found within %s (up to depth %d).\n", gradleProjectRootPath, 3)
+		for _, file := range foundFiles {
+			fmt.Printf("found build file: %s", file)
 		}
 
 		catalog, err := extractVersionCatalog(foundFiles)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error during exracting libs.versions.toml  : %v\n", err)
-			return
+			return fmt.Errorf("failed to extract libs.versions.toml: %w", err)
 		}
 
 		err = embedReferenceToLibs(foundFiles, catalog)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error while rewriting build files  : %v\n", err)
-			return
+			return fmt.Errorf("failed to rewrite build files: %w", err)
 		}
 
 		err = WriteCatalog(catalogFile, catalog)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error during writing libs.versions.toml  : %v\n", err)
-			return
+			return fmt.Errorf("failed to write libs.versions.toml: %w", err)
 		}
 
 		fmt.Println("!!! DONE !!!")
 		fmt.Printf("Generated: %s", catalogFile.Name())
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(generateCommand)
+
 }
