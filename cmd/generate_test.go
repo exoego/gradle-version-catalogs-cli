@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -11,6 +12,8 @@ func TestRoot(t *testing.T) {
 }
 
 func Test1(t *testing.T) {
+	assert.Equal(t, 6, len(os.Args), fmt.Sprintf("6 args expected, got %v", os.Args))
+
 	os.Args = append(os.Args, "generate")
 	os.Args = append(os.Args, "./path/to/gradle/project")
 	assert.NoError(t, generateCommand.Execute())
