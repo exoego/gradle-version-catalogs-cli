@@ -59,7 +59,7 @@ Caution:
 		}
 
 		fmt.Println("!!! DONE !!!")
-		fmt.Println(fmt.Sprintf("Generated: %s", catalogFile.Name()))
+		fmt.Printf("Generated: %s%s", catalogFile.Name(), LineBreak)
 
 		err = catalogFile.Close()
 		return err
