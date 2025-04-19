@@ -129,3 +129,17 @@ foo-bar-buz = { id = "foo.bar-buz", version = "2.2.20-123" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.1.10" }
 `, string(f))
 }
+
+func TestMergeEmpty(t *testing.T) {
+	originalBytes, _ := os.ReadFile("../test/writer.libs.versions.toml")
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/libs.versions.toml", string(originalBytes))
+	writeFile(t, tempdir, "build.gradle", `
+		// empty
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir}
+	assert.NoError(t, generateCommand.Execute())
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, string(originalBytes), string(f))
+}
