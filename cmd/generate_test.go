@@ -45,6 +45,7 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
 	writeFile(t, tempdir, "build.gradle", `
+        classpath 'software.amazon.awssdk:s3'
 		api("foo:foo:1.0")
 	`)
 	writeFile(t, tempdir, "settings.gradle.kts", `
@@ -65,6 +66,7 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 bar-bar = { group = "bar", name = "bar", version = "0.1" }
 foo-foo = { group = "foo", name = "foo", version = "1.0" }
 ok-ok = { group = "ok", name = "ok", version = "2.0" }
+software-amazon-awssdk-s3 = { group = "software.amazon.awssdk", name = "s3", version = "FIXME" }
 
 `, string(f))
 }
