@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 )
 
@@ -33,12 +32,6 @@ func TestNoErrorIfGradleDirectory(t *testing.T) {
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	assert.Equal(t, string(f), "", "Generates an empty libs.versions.toml")
-}
-
-func compareIgnoreLineBreaks(t *testing.T, expected, actual string) {
-	// Remove all line breaks and spaces
-	re := regexp.MustCompile(`\s+`)
-	assert.Equal(t, re.ReplaceAllString(expected, "\n"), re.ReplaceAllString(actual, "\n"))
 }
 
 func TestSkipTopLevelSettingsFile(t *testing.T) {

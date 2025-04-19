@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
@@ -40,4 +41,10 @@ func CaptureStdout(t *testing.T, process func() error) (string, error) {
 	}
 	s := buffer.String()
 	return s[:len(s)-1], nil
+}
+
+func compareIgnoreLineBreaks(t *testing.T, expected, actual string) {
+	// Remove all line breaks and spaces
+	re := regexp.MustCompile(`\s+`)
+	assert.Equal(t, re.ReplaceAllString(expected, "\n"), re.ReplaceAllString(actual, "\n"))
 }
