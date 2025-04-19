@@ -90,3 +90,27 @@ foo-foo-ext = { group = "foo", name = "foo-ext", version.ref = "fooVersion" }
 
 `, string(f))
 }
+
+func TestPluginsSupport(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+		val androidPluginVersion = "8.9.0"
+		id("com.android.application") version "${androidPluginVersion}" apply false
+		id("com.android.library") version "$androidPluginVersion"
+		id("org.jetbrains.kotlin.android") version "2.1.10" apply false
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[versions]
+androidPluginVersion = "8.9.0"
+
+[plugins]
+com-android-application = { id = "com.android.application", version.ref = "androidPluginVersion" }
+com-android-library = { id = "com.android.library", version.ref = "androidPluginVersion" }
+org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.1.10" }
+`, string(f))
+}

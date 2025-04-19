@@ -92,7 +92,7 @@ func compieLibraryVersionExtractor() regexp.Regexp {
 }
 
 func compilePluginExtractor() regexp.Regexp {
-	return *regexp.MustCompile(`(\W)id\W+(?P<id>[\w.-]+)\W+version\W+(?P<version>[\w.-]+)["')]+`)
+	return *regexp.MustCompile(`(\W)id\W+(?P<id>[\w.-]+)\W+version[ ("']+(?P<version>[\w.${}-]+)["')]+`)
 }
 
 func compileVersionVariableExtractor(keys []string) regexp.Regexp {
@@ -131,6 +131,14 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 		plugins[i] = Plugin{
 			Id:      match[2],
 			Version: match[3],
+		}
+
+		if strings.HasPrefix(match[3], "$") {
+			key := extractVariableName(match[3])
+			versions[key] = "FIXME"
+			plugins[i].Version = map[string]any{
+				"ref": key,
+			}
 		}
 	}
 
