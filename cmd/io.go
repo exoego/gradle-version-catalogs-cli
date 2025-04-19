@@ -121,6 +121,7 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 		if strings.HasPrefix(version, "$") {
 			key := extractVariableName(version)
 			versions[key] = "FIXME"
+			libs[i].Version = "$" + key
 		}
 	}
 
