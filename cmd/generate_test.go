@@ -45,8 +45,9 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
 	writeFile(t, tempdir, "build.gradle", `
+		implementation "foo.sub:No-Version"
         classpath 'software.amazon.awssdk:s3'
-		api("foo:foo:1.0")
+		api("foo:foo:1.0-M4")
 	`)
 	writeFile(t, tempdir, "settings.gradle.kts", `
 		implementation("ignore:ignore:1.0")
@@ -57,6 +58,9 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 	writeFile(t, tempdir, "foo/settings.gradle.kts", `
 		implementation("ok:ok:2.0")	
 	`)
+	writeFile(t, tempdir, "too/much/deep/should/be/ignored/build.gradle", `
+		testImplementation("no:no:0.1")
+	`)
 
 	os.Args = []string{"cli", "generate", tempdir}
 	assert.NoError(t, generateCommand.Execute())
@@ -64,7 +68,8 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	compareIgnoreLineBreaks(t, `[libraries]
 bar-bar = { group = "bar", name = "bar", version = "0.1" }
-foo-foo = { group = "foo", name = "foo", version = "1.0" }
+foo-foo = { group = "foo", name = "foo", version = "1.0-M4" }
+foo-sub-no-version = { group = "foo.sub", name = "No-Version", version = "FIXME" }
 ok-ok = { group = "ok", name = "ok", version = "2.0" }
 software-amazon-awssdk-s3 = { group = "software.amazon.awssdk", name = "s3", version = "FIXME" }
 
@@ -107,6 +112,7 @@ func TestPluginsSupport(t *testing.T) {
 		id("com.android.application") version "${androidPluginVersion}" apply false
 		id("com.android.library") version "$androidPluginVersion"
 		id("org.jetbrains.kotlin.android") version "2.1.10" apply false
+		id("foo.bar-buz") version "2.2.20-123"
 	`)
 
 	os.Args = []string{"cli", "generate", tempdir}
@@ -119,6 +125,7 @@ androidPluginVersion = "8.9.0"
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "androidPluginVersion" }
 com-android-library = { id = "com.android.library", version.ref = "androidPluginVersion" }
+foo-bar-buz = { id = "foo.bar-buz", version = "2.2.20-123" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.1.10" }
 `, string(f))
 }
