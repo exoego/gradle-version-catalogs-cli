@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
+	"path/filepath"
 )
 
 var generateCommand = &cobra.Command{
@@ -30,15 +31,9 @@ Caution:
 			return err
 		}
 
-		catalogFile, err := openVersionCatalogFile(gradleProjectRootPath)
-		if err != nil {
-			return err
-		}
-		defer func(catalogFile *os.File) {
-			err = catalogFile.Close()
-		}(catalogFile)
-		if err != nil {
-			return err
+		gradleDirPath := filepath.Join(gradleProjectRootPath, "gradle")
+		if _, err := os.Stat(gradleDirPath); os.IsNotExist(err) {
+			return fmt.Errorf("not a Gradle project seemingly: %s", gradleDirPath)
 		}
 
 		foundFiles, err := findBuildGradle(gradleProjectRootPath, 3, 0)
@@ -60,14 +55,16 @@ Caution:
 			return fmt.Errorf("failed to rewrite build files: %w", err)
 		}
 
-		err = WriteCatalog(catalogFile, catalog)
+		outputPath := filepath.Join(gradleProjectRootPath, "gradle", "libs.versions.toml")
+		err = WriteCatalog(outputPath, catalog)
 		if err != nil {
 			return fmt.Errorf("failed to write libs.versions.toml: %w", err)
 		}
 
 		fmt.Println("!!! DONE !!!")
-		fmt.Printf("Generated: %s", catalogFile.Name())
-		return nil
+		fmt.Printf("Generated: %s%s", outputPath, LineBreak)
+
+		return err
 	},
 }
 
