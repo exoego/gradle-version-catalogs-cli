@@ -14,6 +14,7 @@ func writeFile(t *testing.T, parent string, fileName string, content string) {
 	assert.NoError(t, os.MkdirAll(enclosingDir, 0750))
 
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0750)
+	defer file.Close()
 	assert.NoError(t, err)
 	_, err = file.WriteString(content)
 	assert.NoError(t, err)
