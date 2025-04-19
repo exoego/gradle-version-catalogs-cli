@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"github.com/stoewer/go-strcase"
 	"io"
@@ -22,26 +21,6 @@ func getWorkingDirectory(args []string) (string, error) {
 		return "", err
 	}
 	return dir, nil
-}
-
-func openVersionCatalogFile(root string) (*os.File, error) {
-	// Open the sub directory "gradle" under the root
-	gradleDirPath := filepath.Join(root, "gradle")
-	gradleDir, err := os.Open(gradleDirPath)
-	if err != nil {
-		return nil, fmt.Errorf("not a Gradle project seemingly: %s", gradleDirPath)
-	}
-
-	catalogFile, err := os.OpenFile(filepath.Join(gradleDir.Name(), "libs.versions.toml"), os.O_RDWR|os.O_CREATE, 0644)
-	if errors.Is(err, os.ErrNotExist) {
-		// empty
-		_, err := catalogFile.WriteString("")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return catalogFile, nil
 }
 
 func findBuildGradle(root string, depth int, currentDepth int) ([]string, error) {

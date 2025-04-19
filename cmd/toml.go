@@ -48,7 +48,11 @@ func ReadCatalog(path string) (*VersionCatalog, error) {
 	return catalog, nil
 }
 
-func WriteCatalog(writer io.StringWriter, catalog VersionCatalog) error {
+func WriteCatalog(path string, catalog VersionCatalog) error {
+	writer, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
 	if err := writeVersions(writer, catalog.Versions); err != nil {
 		return err
 	}
@@ -61,7 +65,7 @@ func WriteCatalog(writer io.StringWriter, catalog VersionCatalog) error {
 	if err := writePlugins(writer, catalog.Plugins); err != nil {
 		return err
 	}
-	return nil
+	return writer.Close()
 }
 
 func writeVersions(writer io.StringWriter, versions Versions) error {
