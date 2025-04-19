@@ -26,7 +26,7 @@ type (
 
 	Plugin struct {
 		Id      string
-		Version string
+		Version any
 	}
 
 	Library struct {
@@ -121,49 +121,9 @@ func writeLibraries(writer io.StringWriter, libraries Libraries) error {
 			}
 		}
 
-		if version, ok := v["version"].(string); ok {
-			_, err := writer.WriteString(fmt.Sprintf(", version = %s", strconv.Quote(version)))
-			if err != nil {
-				return err
-			}
-		} else if version, ok := v["version"].(map[string]any); ok {
-			if ref, ok := version["ref"].(string); ok && len(version) == 1 {
-				_, err := writer.WriteString(fmt.Sprintf(", version.ref = %s", strconv.Quote(ref)))
-				if err != nil {
-					return err
-				}
-
-			} else {
-				_, err := writer.WriteString(", version = { ")
-				if err != nil {
-					return err
-				}
-
-				written := false
-				sep := ""
-				for _, vk := range []string{"ref", "strictly", "prefer", "require", "reject"} {
-					if v, ok := version[vk].(string); ok {
-						if written {
-							sep = ", "
-						}
-						written = true
-						_, err := writer.WriteString(fmt.Sprintf("%s%s = %s", sep, vk, strconv.Quote(v)))
-						if err != nil {
-							return err
-						}
-					}
-				}
-				if rejectAll, ok := version["rejectAll"].(bool); ok {
-					_, err := writer.WriteString(fmt.Sprintf(", rejectAll = %v", rejectAll))
-					if err != nil {
-						return err
-					}
-				}
-				_, err = writer.WriteString(" }")
-				if err != nil {
-					return err
-				}
-			}
+		err = writeVersionEntry(writer, v["version"])
+		if err != nil {
+			return err
 		}
 
 		_, err = writer.WriteString(fmt.Sprintf(" }%s", LineBreak))
@@ -174,6 +134,54 @@ func writeLibraries(writer io.StringWriter, libraries Libraries) error {
 	_, err = writer.WriteString(LineBreak)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func writeVersionEntry(writer io.StringWriter, versionContainer any) error {
+	if version, ok := versionContainer.(string); ok {
+		_, err := writer.WriteString(fmt.Sprintf(", version = %s", strconv.Quote(version)))
+		if err != nil {
+			return err
+		}
+	} else if version, ok := versionContainer.(map[string]any); ok {
+		if ref, ok := version["ref"].(string); ok && len(version) == 1 {
+			_, err := writer.WriteString(fmt.Sprintf(", version.ref = %s", strconv.Quote(ref)))
+			if err != nil {
+				return err
+			}
+
+		} else {
+			_, err := writer.WriteString(", version = { ")
+			if err != nil {
+				return err
+			}
+
+			written := false
+			sep := ""
+			for _, vk := range []string{"ref", "strictly", "prefer", "require", "reject"} {
+				if v, ok := version[vk].(string); ok {
+					if written {
+						sep = ", "
+					}
+					written = true
+					_, err := writer.WriteString(fmt.Sprintf("%s%s = %s", sep, vk, strconv.Quote(v)))
+					if err != nil {
+						return err
+					}
+				}
+			}
+			if rejectAll, ok := version["rejectAll"].(bool); ok {
+				_, err := writer.WriteString(fmt.Sprintf(", rejectAll = %v", rejectAll))
+				if err != nil {
+					return err
+				}
+			}
+			_, err = writer.WriteString(" }")
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -214,10 +222,17 @@ func writePlugins(writer io.StringWriter, plugins Plugins) error {
 	}
 	for _, k := range slices.Sorted(maps.Keys(plugins)) {
 		plugin := plugins[k]
-		_, err := writer.WriteString(fmt.Sprintf("%s = { id = %s, version = %s }%s", k,
-			strconv.Quote(plugin.Id),
-			strconv.Quote(plugin.Version),
-			LineBreak))
+		_, err := writer.WriteString(fmt.Sprintf("%s = { id = %s", k, strconv.Quote(plugin.Id)))
+		if err != nil {
+			return err
+		}
+
+		err = writeVersionEntry(writer, plugin.Version)
+		if err != nil {
+			return err
+		}
+
+		_, err = writer.WriteString(fmt.Sprintf(" }%s", LineBreak))
 		if err != nil {
 			return err
 		}
