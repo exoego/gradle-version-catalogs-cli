@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/stretchr/testify/assert"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -63,15 +62,10 @@ func TestWriteCatalog(t *testing.T) {
 	err = WriteCatalog(targetPath, *got)
 	assert.NoError(t, err)
 
-	srcFile, err := os.OpenFile("../test/writer.libs.versions.toml", os.O_RDONLY, 0644)
+	srcContent, err := os.ReadFile("../test/writer.libs.versions.toml")
 	assert.NoError(t, err)
-	srcContent, err := io.ReadAll(srcFile)
+	generatedContent, err := os.ReadFile(targetPath)
 	assert.NoError(t, err)
-	assert.NoError(t, srcFile.Close())
-	tempfile, err := os.OpenFile(targetPath, os.O_RDONLY, 0644)
-	assert.NoError(t, err)
-	generatedContent, err := io.ReadAll(tempfile)
-	assert.NoError(t, tempfile.Close())
 	assert.NoError(t, err)
 	assert.Equal(t, string(srcContent), string(generatedContent))
 }
