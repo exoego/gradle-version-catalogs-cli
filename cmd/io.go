@@ -251,11 +251,7 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 	pluginsAggregated := make([]Plugin, 0)
 
 	for _, path := range buildFilePaths {
-		file, err := os.OpenFile(path, os.O_RDONLY, 0444)
-		if err != nil {
-			return catalog, err
-		}
-		bytes, err := io.ReadAll(file)
+		bytes, err := os.ReadFile(path)
 		if err != nil {
 			return catalog, err
 		}
