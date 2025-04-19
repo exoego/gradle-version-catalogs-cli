@@ -18,6 +18,12 @@ func TestExplicitPathNotAGradle(t *testing.T) {
 	assert.ErrorContains(t, generateCommand.Execute(), "not a Gradle project")
 }
 
+func TestGenerateRejectExtraArg(t *testing.T) {
+	tempdir := t.TempDir()
+	os.Args = []string{"cli", "generate", tempdir, "extra-"}
+	assert.ErrorContains(t, generateCommand.Execute(), "requires at most one arg")
+}
+
 func TestNoErrorIfGradleDirectory(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
