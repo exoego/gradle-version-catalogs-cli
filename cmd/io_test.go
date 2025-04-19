@@ -13,11 +13,8 @@ func writeFile(t *testing.T, parent string, fileName string, content string) {
 	enclosingDir := filepath.Dir(filePath)
 	assert.NoError(t, os.MkdirAll(enclosingDir, 0750))
 
-	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0750)
+	err := os.WriteFile(filePath, []byte(content), 0750)
 	assert.NoError(t, err)
-	_, err = file.WriteString(content)
-	assert.NoError(t, err)
-	assert.NoError(t, file.Close())
 }
 
 func TestFindBuildGradle(t *testing.T) {
@@ -171,4 +168,9 @@ func TestUpdateCatalog(t *testing.T) {
 			"version": "1.2.3-M4",
 		},
 	}, catalog.Libraries)
+}
+
+func TestFormatLibrary(t *testing.T) {
+	assert.Equal(t, "foo", extractVariableName("${foo}"))
+	assert.Equal(t, "bar", extractVariableName("$bar"))
 }
