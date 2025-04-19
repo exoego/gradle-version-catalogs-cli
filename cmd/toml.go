@@ -38,7 +38,8 @@ type (
 
 func ReadCatalog(path string) (*VersionCatalog, error) {
 	if _, err := os.Stat(path); err != nil {
-		return nil, err
+		init := initVersionCatalog()
+		return &init, nil
 	}
 	var catalog *VersionCatalog
 	_, err := toml.DecodeFile(path, &catalog)

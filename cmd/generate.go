@@ -45,17 +45,22 @@ Caution:
 			fmt.Printf("found build file: %s", file)
 		}
 
-		catalog, err := extractVersionCatalog(foundFiles)
+		outputPath := filepath.Join(gradleProjectRootPath, "gradle", "libs.versions.toml")
+		prevCatalog, err := ReadCatalog(outputPath)
+		if err != nil {
+			return fmt.Errorf("failed to read the existing libs.versions.toml: %w", err)
+		}
+
+		catalog, err := extractVersionCatalog(*prevCatalog, foundFiles)
 		if err != nil {
 			return fmt.Errorf("failed to extract libs.versions.toml: %w", err)
 		}
 
-		err = embedReferenceToLibs(foundFiles, catalog)
+		err = embedReferenceToLibs(foundFiles)
 		if err != nil {
 			return fmt.Errorf("failed to rewrite build files: %w", err)
 		}
 
-		outputPath := filepath.Join(gradleProjectRootPath, "gradle", "libs.versions.toml")
 		err = WriteCatalog(outputPath, catalog)
 		if err != nil {
 			return fmt.Errorf("failed to write libs.versions.toml: %w", err)
