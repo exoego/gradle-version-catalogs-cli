@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/stoewer/go-strcase"
-	"io"
 	"maps"
 	"os"
 	"path/filepath"
@@ -271,11 +270,7 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 
 		// two-path since version variable may be defined in other files
 		for _, path := range buildFilePaths {
-			file, err := os.OpenFile(path, os.O_RDONLY, 0444)
-			if err != nil {
-				return catalog, err
-			}
-			bytes, err := io.ReadAll(file)
+			bytes, err := os.ReadFile(path)
 			if err != nil {
 				return catalog, err
 			}
