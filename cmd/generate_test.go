@@ -69,7 +69,7 @@ func TestVariableSupport(t *testing.T) {
 	writeFile(t, tempdir, "build.gradle", `
         val fooVersion = "1.0"
 		api("foo:foo:$fooVersion")
-		api("bar:bar:$barVersion")
+		api("bar:bar:${barVersion}")
 	`)
 	writeFile(t, tempdir, "foo/build.gradle", `
 		testImplementation("foo:foo-ext:${fooVersion}")
