@@ -47,23 +47,12 @@ func ReadCatalog(path string) (*VersionCatalog, error) {
 }
 
 func WriteCatalog(path string, catalog VersionCatalog) error {
-	writer, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	if _, err := writer.WriteString(writeVersions(catalog.Versions)); err != nil {
-		return err
-	}
-	if _, err := writer.WriteString(writeLibraries(catalog.Libraries)); err != nil {
-		return err
-	}
-	if _, err := writer.WriteString(writeBundles(catalog.Bundles)); err != nil {
-		return err
-	}
-	if _, err := writer.WriteString(writePlugins(catalog.Plugins)); err != nil {
-		return err
-	}
-	return writer.Close()
+	var builder strings.Builder
+	builder.WriteString(writeVersions(catalog.Versions))
+	builder.WriteString(writeLibraries(catalog.Libraries))
+	builder.WriteString(writeBundles(catalog.Bundles))
+	builder.WriteString(writePlugins(catalog.Plugins))
+	return os.WriteFile(path, []byte(builder.String()), 0644)
 }
 
 func writeVersions(versions Versions) string {
