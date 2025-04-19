@@ -61,6 +61,7 @@ func findBuildGradle(root string, depth int, currentDepth int) ([]string, error)
 func getConfigurations() []string {
 	return []string{
 		"api",
+		"classpath",
 		"implementation",
 		"compileOnly",
 		"compileOnlyApi",
