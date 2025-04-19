@@ -69,9 +69,10 @@ func TestVariableSupport(t *testing.T) {
 	writeFile(t, tempdir, "build.gradle", `
         val fooVersion = "1.0"
 		api("foo:foo:$fooVersion")
+		api("bar:bar:$barVersion")
 	`)
 	writeFile(t, tempdir, "foo/build.gradle", `
-		testImplementation("foo:foo-ext:${bar}")
+		testImplementation("foo:foo-ext:${fooVersion}")
 	`)
 
 	os.Args = []string{"cli", "generate", tempdir}
@@ -79,12 +80,13 @@ func TestVariableSupport(t *testing.T) {
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	compareIgnoreLineBreaks(t, `[versions]
-bar = "FIXME"
+barVersion = "FIXME"
 fooVersion = "1.0"
 
 [libraries]
+bar-bar = { group = "bar", name = "bar", version.ref = "barVersion" }
 foo-foo = { group = "foo", name = "foo", version.ref = "fooVersion" }
-foo-foo-ext = { group = "foo", name = "foo-ext", version.ref = "{bar}" }
+foo-foo-ext = { group = "foo", name = "foo-ext", version.ref = "fooVersion" }
 
 `, string(f))
 }
