@@ -61,9 +61,6 @@ gradle-version-catalogs-cli generate [PATH]
 - If no `PATH` is provided, the current working directory is used.
 - Some manual intervention may be required.
 
-> [!WARNING]
-> If libs.version.toml already exists, it will be overwritten.
-
 ## Development
 
 ```bash

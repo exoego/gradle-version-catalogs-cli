@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 )
 
@@ -33,12 +32,6 @@ func TestNoErrorIfGradleDirectory(t *testing.T) {
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	assert.Equal(t, string(f), "", "Generates an empty libs.versions.toml")
-}
-
-func compareIgnoreLineBreaks(t *testing.T, expected, actual string) {
-	// Remove all line breaks and spaces
-	re := regexp.MustCompile(`\s+`)
-	assert.Equal(t, re.ReplaceAllString(expected, "\n"), re.ReplaceAllString(actual, "\n"))
 }
 
 func TestSkipTopLevelSettingsFile(t *testing.T) {
@@ -128,4 +121,18 @@ com-android-library = { id = "com.android.library", version.ref = "androidPlugin
 foo-bar-buz = { id = "foo.bar-buz", version = "2.2.20-123" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.1.10" }
 `, string(f))
+}
+
+func TestMergeEmpty(t *testing.T) {
+	originalBytes, _ := os.ReadFile("../test/writer.libs.versions.toml")
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/libs.versions.toml", string(originalBytes))
+	writeFile(t, tempdir, "build.gradle", `
+		// empty
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir}
+	assert.NoError(t, generateCommand.Execute())
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, string(originalBytes), string(f))
 }

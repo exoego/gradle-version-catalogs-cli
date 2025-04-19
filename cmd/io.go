@@ -211,7 +211,7 @@ func initVersionCatalog() VersionCatalog {
 	return catalog
 }
 
-func embedReferenceToLibs(buildFilePaths []string, catalog VersionCatalog) error {
+func embedReferenceToLibs(buildFilePaths []string) error {
 	extractor := getStaticExtractors()
 
 	for _, buildFilePath := range buildFilePaths {
@@ -251,8 +251,7 @@ func embedReferenceToLibs(buildFilePaths []string, catalog VersionCatalog) error
 	return nil
 }
 
-func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
-	catalog := initVersionCatalog()
+func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string) (VersionCatalog, error) {
 	extractor := getStaticExtractors()
 
 	versionsAggregated := make(Versions, 0)
@@ -296,7 +295,7 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 		}
 	}
 
-	catalog.Versions = versionsAggregated
+	maps.Copy(catalog.Versions, versionsAggregated)
 	updateCatalog(catalog, librariesAggregated)
 
 	return catalog, nil
