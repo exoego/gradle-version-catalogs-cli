@@ -101,11 +101,11 @@ func compileVersionVariableExtractor(keys []string) regexp.Regexp {
 	return *regexp.MustCompile(fmt.Sprintf(`\W(%s)\W?=\W*["']([^"']+)["']`, combinedKeys))
 }
 
-func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, []Library) {
+func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, []StrictLibrary) {
 	versions := make(Versions, 0)
 
 	allMatchedLibs := extractor.library.FindAllStringSubmatch(text, -1)
-	libs := make([]Library, len(allMatchedLibs))
+	libs := make([]StrictLibrary, len(allMatchedLibs))
 	for i, match := range allMatchedLibs {
 		var version string
 		if match[4] == "" {
@@ -113,7 +113,7 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 		} else {
 			version = match[4]
 		}
-		libs[i] = Library{
+		libs[i] = StrictLibrary{
 			Group:   match[2],
 			Name:    match[3],
 			Version: version,
@@ -137,7 +137,7 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 		if strings.HasPrefix(match[3], "$") {
 			key := extractVariableName(match[3])
 			versions[key] = "FIXME"
-			plugins[i].Version = map[string]any{
+			plugins[i].Version = LooseLibrary{
 				"ref": key,
 			}
 		}
@@ -170,7 +170,7 @@ func extractVersioVariables(versions Versions, extractor regexp.Regexp, text str
 
 var nonIdChars = regexp.MustCompile("[^a-zA-Z0-9_-]+")
 
-func catalogSafeKey(lib Library) string {
+func catalogSafeKey(lib StrictLibrary) string {
 	combined := fmt.Sprintf("%s.%s", lib.Group, lib.Name)
 	hyphenated := nonIdChars.ReplaceAllString(combined, "-")
 	return strcase.KebabCase(hyphenated)
@@ -181,12 +181,12 @@ func catalogSafeKeyPlugin(lib Plugin) string {
 	return strcase.KebabCase(hyphenated)
 }
 
-func updateCatalog(catalog VersionCatalog, libraries []Library) {
+func updateCatalog(catalog VersionCatalog, libraries []StrictLibrary) {
 	for _, lib := range libraries {
 		var version any
 		if strings.HasPrefix(lib.Version, "$") {
 			trimmedVersion := lib.Version[1:]
-			version = map[string]any{
+			version = LooseLibrary{
 				"ref": trimmedVersion,
 			}
 		} else {
@@ -194,7 +194,7 @@ func updateCatalog(catalog VersionCatalog, libraries []Library) {
 		}
 
 		key := catalogSafeKey(lib)
-		catalog.Libraries[key] = map[string]any{
+		catalog.Libraries[key] = LooseLibrary{
 			"group":   lib.Group,
 			"name":    lib.Name,
 			"version": version,
@@ -225,7 +225,7 @@ func embedReferenceToLibs(buildFilePaths []string, catalog VersionCatalog) error
 		content = extractor.library.ReplaceAllStringFunc(content, func(s string) string {
 			match := extractor.library.FindStringSubmatch(s)
 			config := match[1]
-			key := strings.ReplaceAll(catalogSafeKey(Library{
+			key := strings.ReplaceAll(catalogSafeKey(StrictLibrary{
 				Group:   match[2],
 				Name:    match[3],
 				Version: match[4],
@@ -256,7 +256,7 @@ func extractVersionCatalog(buildFilePaths []string) (VersionCatalog, error) {
 	extractor := getStaticExtractors()
 
 	versionsAggregated := make(Versions, 0)
-	librariesAggregated := make([]Library, 0)
+	librariesAggregated := make([]StrictLibrary, 0)
 	pluginsAggregated := make([]Plugin, 0)
 
 	for _, path := range buildFilePaths {

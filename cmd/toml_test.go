@@ -22,20 +22,20 @@ func TestReadCatalog(t *testing.T) {
 		"foo-bar": {
 			"group": "org.example",
 			"name":  "foo-bar",
-			"version": map[string]any{
+			"version": LooseLibrary{
 				"ref": "bar",
 			},
 		},
 		"awsJavaSdkDynamodb": {
 			"module": "com.amazonaws:aws-java-sdk-dynamodb",
-			"version": map[string]any{
+			"version": LooseLibrary{
 				"ref": "awsJavaSdk",
 			},
 		},
 		"commons-lang3": {
 			"group": "org.apache.commons",
 			"name":  "commons-lang3",
-			"version": map[string]any{
+			"version": LooseLibrary{
 				"strictly": "[3.8, 4.0[",
 				"prefer":   "3.9",
 			},
@@ -43,7 +43,7 @@ func TestReadCatalog(t *testing.T) {
 		"mylib-full-format": {
 			"group": "com.mycompany",
 			"name":  "alternate",
-			"version": map[string]any{
+			"version": LooseLibrary{
 				"require":   "1.4",
 				"reject":    "1.4.0",
 				"rejectAll": false,
