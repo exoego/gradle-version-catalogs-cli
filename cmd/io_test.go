@@ -169,3 +169,8 @@ func TestUpdateCatalog(t *testing.T) {
 		},
 	}, catalog.Libraries)
 }
+
+func TestFormatLibrary(t *testing.T) {
+	assert.Equal(t, "foo", extractVariableName("${foo}"))
+	assert.Equal(t, "bar", extractVariableName("$bar"))
+}

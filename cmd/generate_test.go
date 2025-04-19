@@ -62,3 +62,29 @@ ok-ok = { group = "ok", name = "ok", version = "2.0" }
 
 `, string(f))
 }
+
+func TestVariableSupport(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+        val fooVersion = "1.0"
+		api("foo:foo:$fooVersion")
+	`)
+	writeFile(t, tempdir, "foo/build.gradle", `
+		testImplementation("foo:foo-ext:${bar}")
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[versions]
+bar = "FIXME"
+fooVersion = "1.0"
+
+[libraries]
+foo-foo = { group = "foo", name = "foo", version.ref = "fooVersion" }
+foo-foo-ext = { group = "foo", name = "foo-ext", version.ref = "{bar}" }
+
+`, string(f))
+}
