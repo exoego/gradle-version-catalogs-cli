@@ -11,7 +11,7 @@ import (
 
 type (
 	Versions  = map[string]string
-	Libraries = map[string]map[string]any
+	Libraries = map[string]LooseLibrary
 	Plugins   = map[string]Plugin
 	Bundles   = map[string][]string
 
@@ -27,7 +27,9 @@ type (
 		Version any
 	}
 
-	Library struct {
+	LooseLibrary = map[string]any
+
+	StrictLibrary struct {
 		Group   string
 		Name    string
 		Version string
@@ -109,7 +111,7 @@ func writeVersionEntry(versionContainer any) string {
 		builder.WriteString(strconv.Quote(version))
 		return builder.String()
 	}
-	if version, ok := versionContainer.(map[string]any); ok {
+	if version, ok := versionContainer.(LooseLibrary); ok {
 		var builder strings.Builder
 		if ref, ok := version["ref"].(string); ok && len(version) == 1 {
 			builder.WriteString(", version.ref = ")
