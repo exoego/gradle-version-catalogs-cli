@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var generateCommand = &cobra.Command{
@@ -31,12 +30,6 @@ Caution:
 		}
 
 		catalogFile, err := openVersionCatalogFile(gradleProjectRootPath)
-		if err != nil {
-			return err
-		}
-		defer func(catalogFile *os.File) {
-			err = catalogFile.Close()
-		}(catalogFile)
 		if err != nil {
 			return err
 		}
@@ -67,7 +60,9 @@ Caution:
 
 		fmt.Println("!!! DONE !!!")
 		fmt.Printf("Generated: %s", catalogFile.Name())
-		return nil
+
+		err = catalogFile.Close()
+		return err
 	},
 }
 
