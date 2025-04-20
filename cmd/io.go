@@ -306,9 +306,6 @@ func searchMaven(group, name string) (string, error) {
 		}
 	}(res.Body)
 
-	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to get latest version: %s", res.Status)
-	}
 	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "FIXME", nil
