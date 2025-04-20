@@ -266,15 +266,9 @@ func searchLatestVersions(catalog VersionCatalog) error {
 			library["version"] = newVer
 		}
 	}
-	for _, plugin := range catalog.Plugins {
-		if v, ok := plugin.Version.(string); ok && v == "FIXME" {
-			newVer, err := searchMaven(plugin.Id, plugin.Id+".gradle.plugin")
-			if err != nil {
-				return err
-			}
-			plugin.Version = newVer
-		}
-	}
+
+	// Skip plugins since non-core plugins always have version
+	// https://docs.gradle.org/current/userguide/plugins.html#sec:binary_plugin_locations
 
 	return nil
 }
