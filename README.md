@@ -18,6 +18,7 @@ Example)
 val awsSdkVersion = "2.3.4"
 implementation("software.amazon.awssdk:sts:$awsSdkVersion")
 implementation("software.amazon.awssdk:dynamodb:$awsSdkVersion")
+implementation("ch.qos.logback:logback-classic")
 ```
 
 This will be rewritten to:
@@ -26,6 +27,7 @@ This will be rewritten to:
 // After
 implementation(libs.software.amazon.awssdk.sts)
 implementation(libs.software.amazon.awssdk.dynamodb)
+implementation(libs.ch.qos.logback.logback.classic)
 ```
 
 with the generated version catalogs `libs.versions.toml`: 
@@ -37,8 +39,13 @@ awsSdkVersion = "2.3.4"
 [dependencies]
 software-amazon-awssdk-dynamodb = { group = "software.amazon.awssdk", name = "dynamodb", version.ref = "awsSdkVersion" }
 software-amazon-awssdk-sts = { group = "software.amazon.awssdk", name = "sts", version.ref = "awsSdkVersion" }
+ch-qos-logback-logback-classic = { group = "ch.qos.logback", name = "logback-classic", version = "1.5.18" }
 ```
 
+> ![NOTE]
+> `generate` command tries to auto-fill the version for the dependencies that are not specified in the build files, and fallbacks to `FIXME` if it cannot find the version.
+> The autofilled version may be too new, so some manual intervention may be required.
+  
 ## Usage
 
 1. Download from https://github.com/exoego/gradle-version-catalogs-cli/releases

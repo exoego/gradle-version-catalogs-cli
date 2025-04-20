@@ -1,13 +1,18 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/stoewer/go-strcase"
+	"io"
 	"maps"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func getWorkingDirectory(args []string) (string, error) {
@@ -249,6 +254,80 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 		}
 	}
 	return nil
+}
+
+func searchLatestVersions(catalog VersionCatalog) error {
+	for _, library := range catalog.Libraries {
+		if v, ok := library["version"].(string); ok && v == "FIXME" {
+			newVer, err := searchMaven(library["group"].(string), library["name"].(string))
+			if err != nil {
+				return err
+			}
+			library["version"] = newVer
+		}
+	}
+	for _, plugin := range catalog.Plugins {
+		if v, ok := plugin.Version.(string); ok && v == "FIXME" {
+			newVer, err := searchMaven(plugin.Id, plugin.Id+".gradle.plugin")
+			if err != nil {
+				return err
+			}
+			plugin.Version = newVer
+		}
+	}
+
+	return nil
+}
+
+var client = &http.Client{
+	Timeout: 5 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   time.Second,
+		ResponseHeaderTimeout: time.Second,
+		IdleConnTimeout:       time.Second,
+	},
+}
+
+type MavenResponse struct {
+	Response struct {
+		NumFound int `json:"numFound"`
+		Docs     []struct {
+			Version string `json:"v"`
+		} `json:"docs"`
+	} `json:"response"`
+}
+
+func searchMaven(group, name string) (string, error) {
+	res, err := client.Get(fmt.Sprintf("https://search.maven.org/solrsearch/select?q=g:%s+AND+a:%s&rows=5&core=gav&wt=json", group, name))
+	if err != nil {
+		return "", err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close response body: %v\n", err)
+		}
+	}(res.Body)
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to get latest version: %s", res.Status)
+	}
+	bytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "FIXME", nil
+	}
+	data := MavenResponse{}
+	err = json.Unmarshal(bytes, &data)
+	if err != nil {
+		return "FIXME", nil
+	}
+	if data.Response.NumFound == 0 {
+		return "FIXME", nil
+	}
+	return data.Response.Docs[0].Version, nil
 }
 
 func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string) (VersionCatalog, error) {
