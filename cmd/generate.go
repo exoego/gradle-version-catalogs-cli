@@ -62,10 +62,7 @@ Caution:
 		}
 
 		if useAutoLatest {
-			err = searchLatestVersions(catalog)
-			if err != nil {
-				return fmt.Errorf("failed to auto select latest version: %w", err)
-			}
+			searchLatestVersions(catalog)
 		}
 
 		err = embedReferenceToLibs(foundFiles)
