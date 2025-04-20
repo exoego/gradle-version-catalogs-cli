@@ -30,6 +30,12 @@ func TestGenerateRejectUnknownFlag(t *testing.T) {
 	assert.ErrorContains(t, generateCommand.Execute(), "unknown flag")
 }
 
+func TestGenerateRejectInvalidValue(t *testing.T) {
+	tempdir := t.TempDir()
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=foo"}
+	assert.ErrorContains(t, generateCommand.Execute(), `invalid argument "foo"`)
+}
+
 func TestNoErrorIfGradleDirectory(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
