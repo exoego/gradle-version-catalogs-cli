@@ -295,10 +295,7 @@ func searchMaven(group, name string) string {
 		return "FIXME"
 	}
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			fmt.Printf("failed to close response body: %v\n", err)
-		}
+		_ = Body.Close()
 	}(res.Body)
 
 	bytes, err := io.ReadAll(res.Body)
