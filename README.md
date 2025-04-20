@@ -42,8 +42,9 @@ software-amazon-awssdk-sts = { group = "software.amazon.awssdk", name = "sts", v
 ch-qos-logback-logback-classic = { group = "ch.qos.logback", name = "logback-classic", version = "1.5.18" }
 ```
 
-> ![NOTE]
-> `generate` command tries to auto-fill the version for the dependencies that are not specified in the build files, and fallbacks to `FIXME` if it cannot find the version.
+> [!NOTE]
+> In the above example, the latest version `1.5.18` is automatically selected for `logback-classic` since version must be specified in version catalog. If the command failed to decide latest version, it fallbacks to `FIXME`.
+> This behavior is enabled by default and can be disabled via `--auto-latest=false` option.
 > The autofilled version may be too new, so some manual intervention may be required.
   
 ## Usage
