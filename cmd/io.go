@@ -1,13 +1,18 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/stoewer/go-strcase"
+	"io"
 	"maps"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func getWorkingDirectory(args []string) (string, error) {
@@ -249,6 +254,63 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 		}
 	}
 	return nil
+}
+
+func searchLatestVersions(catalog VersionCatalog) {
+	for _, library := range catalog.Libraries {
+		if v, ok := library["version"].(string); ok && v == "FIXME" {
+			newVer := searchMaven(library["group"].(string), library["name"].(string))
+			library["version"] = newVer
+		}
+	}
+
+	// Skip plugins since non-core plugins always have version
+	// https://docs.gradle.org/current/userguide/plugins.html#sec:binary_plugin_locations
+}
+
+var client = &http.Client{
+	Timeout: 5 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   time.Second,
+		ResponseHeaderTimeout: time.Second,
+		IdleConnTimeout:       time.Second,
+	},
+}
+
+type MavenResponse struct {
+	Response struct {
+		NumFound int `json:"numFound"`
+		Docs     []struct {
+			Version string `json:"v"`
+		} `json:"docs"`
+	} `json:"response"`
+}
+
+func searchMaven(group, name string) string {
+	res, err := client.Get(fmt.Sprintf("https://search.maven.org/solrsearch/select?q=g:%s+AND+a:%s&rows=5&core=gav&wt=json", group, name))
+	if err != nil {
+		return "FIXME"
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+
+	bytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "FIXME"
+	}
+	data := MavenResponse{}
+	err = json.Unmarshal(bytes, &data)
+	if err != nil {
+		return "FIXME"
+	}
+	if data.Response.NumFound == 0 {
+		return "FIXME"
+	}
+	return data.Response.Docs[0].Version
 }
 
 func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string) (VersionCatalog, error) {

@@ -20,8 +20,8 @@ Caution:
   If libs.version.toml already exists, it will be overwritten.
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("requires at most one arg")
+		if len(args) > 2 {
+			return errors.New("requires at most two arg")
 		}
 		return nil
 	},
@@ -29,6 +29,11 @@ Caution:
 		gradleProjectRootPath, err := getWorkingDirectory(args)
 		if err != nil {
 			return err
+		}
+
+		useAutoLatest, err := cmd.Flags().GetBool("auto-latest")
+		if err != nil {
+			return fmt.Errorf("error option: %w", err)
 		}
 
 		gradleDirPath := filepath.Join(gradleProjectRootPath, "gradle")
@@ -56,6 +61,10 @@ Caution:
 			return fmt.Errorf("failed to extract libs.versions.toml: %w", err)
 		}
 
+		if useAutoLatest {
+			searchLatestVersions(catalog)
+		}
+
 		err = embedReferenceToLibs(foundFiles)
 		if err != nil {
 			return fmt.Errorf("failed to rewrite build files: %w", err)
@@ -75,5 +84,5 @@ Caution:
 
 func init() {
 	rootCmd.AddCommand(generateCommand)
-
+	generateCommand.Flags().Bool("auto-latest", true, "auto select latest version if none is specified")
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
@@ -19,8 +20,20 @@ func TestExplicitPathNotAGradle(t *testing.T) {
 
 func TestGenerateRejectExtraArg(t *testing.T) {
 	tempdir := t.TempDir()
-	os.Args = []string{"cli", "generate", tempdir, "extra-"}
-	assert.ErrorContains(t, generateCommand.Execute(), "requires at most one arg")
+	os.Args = []string{"cli", "generate", tempdir, "extra", "too-much"}
+	assert.ErrorContains(t, generateCommand.Execute(), "requires at most two arg")
+}
+
+func TestGenerateRejectUnknownFlag(t *testing.T) {
+	tempdir := t.TempDir()
+	os.Args = []string{"cli", "generate", tempdir, "--huh"}
+	assert.ErrorContains(t, generateCommand.Execute(), "unknown flag")
+}
+
+func TestGenerateRejectInvalidValue(t *testing.T) {
+	tempdir := t.TempDir()
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=foo"}
+	assert.ErrorContains(t, generateCommand.Execute(), `invalid argument "foo"`)
 }
 
 func TestNoErrorIfGradleDirectory(t *testing.T) {
@@ -55,7 +68,7 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 		testImplementation("no:no:0.1")
 	`)
 
-	os.Args = []string{"cli", "generate", tempdir}
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
 	assert.NoError(t, generateCommand.Execute())
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
@@ -81,7 +94,7 @@ func TestVariableSupport(t *testing.T) {
 		testImplementation("foo:foo-ext:${fooVersion}")
 	`)
 
-	os.Args = []string{"cli", "generate", tempdir}
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
 	assert.NoError(t, generateCommand.Execute())
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
@@ -108,7 +121,7 @@ func TestPluginsSupport(t *testing.T) {
 		id("foo.bar-buz") version "2.2.20-123"
 	`)
 
-	os.Args = []string{"cli", "generate", tempdir}
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
 	assert.NoError(t, generateCommand.Execute())
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
@@ -131,8 +144,26 @@ func TestMergeEmpty(t *testing.T) {
 		// empty
 	`)
 
-	os.Args = []string{"cli", "generate", tempdir}
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
 	assert.NoError(t, generateCommand.Execute())
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	compareIgnoreLineBreaks(t, string(originalBytes), string(f))
+}
+
+func TestAutoLatestDependency(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+		api("org.apache.logging.log4j:log4j-core")
+		id("org.gradle.kotlin.embedded-kotlin") version "2.1.10"
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=true"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	actual := string(f)
+	assert.Contains(t, actual, "[libraries]", "Missing [libraries] section")
+	assert.NotContains(t, actual, `"FIXME"`, "Should not contain FIXME")
+	assert.Regexp(t, regexp.MustCompile(`name = "log4j-core", version = "\d+\.\d+\.\d+`), actual)
 }
