@@ -93,7 +93,7 @@ func getStaticExtractors() StaticExtractors {
 
 func compieLibraryVersionExtractor() regexp.Regexp {
 	configPattern := strings.Join(getConfigurations(), "|")
-	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+))?"
+	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+)(?::(?P<classifier>[a-zA-Z0-9_-]+))?)?"
 	return *regexp.MustCompile(fmt.Sprintf(`(?P<config>%s)\s*\(?["']%s["']\)?`, configPattern, libraryPattern))
 }
 
@@ -240,7 +240,12 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 				Name:    match[3],
 				Version: match[4],
 			}), "-", ".")
-			return fmt.Sprintf("%s(libs.%s)", config, key)
+			classifier := match[5]
+			if classifier == "" {
+				return fmt.Sprintf("%s(libs.%s)", config, key)
+			} else {
+				return fmt.Sprintf(`%s(variantOf(libs.%s) { classifier("%s") })`, config, key, classifier)
+			}
 		})
 
 		content = extractor.plugin.ReplaceAllStringFunc(content, func(s string) string {
