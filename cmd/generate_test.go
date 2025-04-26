@@ -54,6 +54,7 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 		implementation "foo.sub:No-Version"
         classpath 'software.amazon.awssdk:s3'
 		api("foo:foo:1.0-M4")
+	    testImplementation("org.apache.flink:flink-runtime_2.12:1.13.2")
 	`)
 	writeFile(t, tempdir, "settings.gradle.kts", `
 		implementation("ignore:ignore:1.0")
@@ -77,8 +78,8 @@ bar-bar = { group = "bar", name = "bar", version = "0.1" }
 foo-foo = { group = "foo", name = "foo", version = "1.0-M4" }
 foo-sub-no-version = { group = "foo.sub", name = "No-Version", version = "FIXME" }
 ok-ok = { group = "ok", name = "ok", version = "2.0" }
+org-apache-flink-flink-runtime212 = { group = "org.apache.flink", name = "flink-runtime_2.12", version = "1.13.2" }
 software-amazon-awssdk-s3 = { group = "software.amazon.awssdk", name = "s3", version = "FIXME" }
-
 `, string(f))
 }
 
