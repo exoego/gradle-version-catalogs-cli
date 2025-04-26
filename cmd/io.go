@@ -174,16 +174,23 @@ func extractVersioVariables(versions Versions, extractor regexp.Regexp, text str
 }
 
 var nonIdChars = regexp.MustCompile("[^a-zA-Z0-9_-]+")
+var numericFollowingSeparator = regexp.MustCompile("-[0-9]+")
 
 func catalogSafeKey(lib StrictLibrary) string {
 	combined := fmt.Sprintf("%s.%s", lib.Group, lib.Name)
-	hyphenated := nonIdChars.ReplaceAllString(combined, "-")
-	return strcase.KebabCase(hyphenated)
+	return safeKey(combined)
 }
 
 func catalogSafeKeyPlugin(lib Plugin) string {
-	hyphenated := nonIdChars.ReplaceAllString(lib.Id, "-")
-	return strcase.KebabCase(hyphenated)
+	return safeKey(lib.Id)
+}
+
+func safeKey(src string) string {
+	hyphenated := nonIdChars.ReplaceAllString(src, "-")
+	kebab := strcase.KebabCase(hyphenated)
+	return numericFollowingSeparator.ReplaceAllStringFunc(kebab, func(matched string) string {
+		return strings.ReplaceAll(matched, "-", "")
+	})
 }
 
 func updateCatalog(catalog VersionCatalog, libraries []StrictLibrary) {
