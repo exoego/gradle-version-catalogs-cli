@@ -232,8 +232,6 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 			return err
 		}
 		content := string(bytes)
-		fmt.Printf("old content len %v, content ", len(content))
-
 		content = extractor.library.ReplaceAllStringFunc(content, func(s string) string {
 			match := extractor.library.FindStringSubmatch(s)
 			config := match[1]
