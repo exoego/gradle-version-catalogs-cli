@@ -18,7 +18,8 @@ Example)
 val awsSdkVersion = "2.3.4"
 implementation("software.amazon.awssdk:sts:$awsSdkVersion")
 implementation("software.amazon.awssdk:dynamodb:$awsSdkVersion")
-implementation("ch.qos.logback:logback-classic")
+implementation("ch.qos.logback:logback-classic") // auto version
+implementation("net.sf.json-lib:json-lib:2.3:jdk15") // classifier
 ```
 
 This will be rewritten to:
@@ -28,6 +29,7 @@ This will be rewritten to:
 implementation(libs.software.amazon.awssdk.sts)
 implementation(libs.software.amazon.awssdk.dynamodb)
 implementation(libs.ch.qos.logback.logback.classic)
+implementation(variantOf(libs.net.sf.json.lib.json.lib) { classifier = "jdk15" })
 ```
 
 with the generated version catalogs `libs.versions.toml`: 
@@ -40,6 +42,7 @@ awsSdkVersion = "2.3.4"
 software-amazon-awssdk-dynamodb = { group = "software.amazon.awssdk", name = "dynamodb", version.ref = "awsSdkVersion" }
 software-amazon-awssdk-sts = { group = "software.amazon.awssdk", name = "sts", version.ref = "awsSdkVersion" }
 ch-qos-logback-logback-classic = { group = "ch.qos.logback", name = "logback-classic", version = "1.5.18" }
+net-sf-json-lib-json-lib = { group = "net.sf.json-lib", name = "json-lib", version = "2.3" }
 ```
 
 > [!NOTE]
