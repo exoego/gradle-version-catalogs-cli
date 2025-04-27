@@ -47,7 +47,7 @@ Caution:
 		}
 
 		for _, file := range foundFiles {
-			fmt.Printf("found build file: %s", file)
+			fmt.Printf("found build file: %s%s", file, LineBreak)
 		}
 
 		outputPath := filepath.Join(gradleProjectRootPath, "gradle", "libs.versions.toml")
