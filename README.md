@@ -78,5 +78,5 @@ gradle-version-catalogs-cli generate [PATH]
 go get
 make test
 make build
-./gradle-version-catalogs-cli ../path/to/gradle/project
+./gradle-version-catalogs-cli generate ../path/to/gradle/project
 ```
