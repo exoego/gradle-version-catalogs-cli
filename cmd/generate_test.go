@@ -56,6 +56,7 @@ func TestSkipTopLevelSettingsFile(t *testing.T) {
 		api("foo:foo:1.0-M4")
 	    testImplementation("org.apache.flink:flink-runtime_2.12:1.13.2")
         implementation("org.openjfx:javafx-base:11.0.2:win")
+        annotationProcessor 'org.jboss.logging:jboss-logging:3.6.1.Final'
 	`)
 	writeFile(t, tempdir, "settings.gradle.kts", `
 		implementation("ignore:ignore:1.0")
@@ -80,6 +81,7 @@ foo-foo = { group = "foo", name = "foo", version = "1.0-M4" }
 foo-sub-no-version = { group = "foo.sub", name = "No-Version", version = "FIXME" }
 ok-ok = { group = "ok", name = "ok", version = "2.0" }
 org-apache-flink-flink-runtime212 = { group = "org.apache.flink", name = "flink-runtime_2.12", version = "1.13.2" }
+org-jboss-logging-jboss-logging = { group = "org.jboss.logging", name = "jboss-logging", version = "3.6.1.Final" }
 org-openjfx-javafx-base = { group = "org.openjfx", name = "javafx-base", version = "11.0.2" }
 software-amazon-awssdk-s3 = { group = "software.amazon.awssdk", name = "s3", version = "FIXME" }
 `, string(f))
@@ -91,6 +93,7 @@ software-amazon-awssdk-s3 = { group = "software.amazon.awssdk", name = "s3", ver
 		api(libs.foo.foo)
 		testImplementation(libs.org.apache.flink.flink.runtime212)
 		implementation(variantOf(libs.org.openjfx.javafx.base) { classifier("win") })
+   		annotationProcessor(libs.org.jboss.logging.jboss.logging)
 `, string(f2))
 
 }
