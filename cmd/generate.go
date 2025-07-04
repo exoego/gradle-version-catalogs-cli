@@ -76,7 +76,6 @@ Caution:
 			return fmt.Errorf("failed to write libs.versions.toml: %w", err)
 		}
 
-		fmt.Println("!!! DONE !!!")
 		fmt.Printf("Generated: %s%s", outputPath, LineBreak)
 
 		return err

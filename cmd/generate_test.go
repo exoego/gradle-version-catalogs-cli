@@ -220,14 +220,14 @@ func TestMapNotation(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
 	writeFile(t, tempdir, "build.gradle", `
-		runtimeOnly group: 'a.a', name: 'aaa', version: '1.0.0', transitive: true
-		runtimeOnly(group: 'b.b', name: 'bbb', version: '2.0.0') {
+		runtimeOnly(group: 'b.b', name :'bbb' , version: '2.0.0') {
 			transitive = true
 		}
-		implementation(group = "c.c", name = "ccc", version = "3.0.0")
+		implementation(group = "c.c", name = "ccc", version = dVersion)
 		implementation(group = "d.d", name = "ddd", version = "$dVersion") {
 			isTransitive = true
 		}
+		implementation(group = "e.e", name = "eee")
 	`)
 
 	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
@@ -235,12 +235,24 @@ func TestMapNotation(t *testing.T) {
 
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	compareIgnoreLineBreaks(t, `[versions]
-dVersion = "FIXME""
+dVersion = "FIXME"
 
-[plugins]
-a-a-a = { group = "a.a", name = "a", version = "1.0.0" }
-b-b-b = { group = "b.b", name = "b", version = "2.0.0" }
-c-c-c = { group = "c.c", name = "c", version = "3.0.0" }
-d-d-d = { group = "d.d", name = "d", version.ref = "dVersion" }
+[libraries]
+b-b-bbb = { group = "b.b", name = "bbb", version = "2.0.0" }
+c-c-ccc = { group = "c.c", name = "ccc", version.ref = "dVersion" }
+d-d-ddd = { group = "d.d", name = "ddd", version.ref = "dVersion" }
+e-e-eee = { group = "e.e", name = "eee", version = "FIXME" }
 `, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+		runtimeOnly(libs.b.b.bbb) {
+			transitive = true
+		}
+		implementation(libs.c.c.ccc)
+		implementation(libs.d.d.ddd) {
+			isTransitive = true
+		}
+		implementation(libs.e.e.eee)
+	`, string(f))
 }
