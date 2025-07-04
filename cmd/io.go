@@ -88,11 +88,11 @@ type StaticExtractors struct {
 func getStaticExtractors() StaticExtractors {
 	return StaticExtractors{
 		plugin:  compilePluginExtractor(),
-		library: compieLibraryVersionExtractor(),
+		library: compileLibraryVersionExtractor(),
 	}
 }
 
-func compieLibraryVersionExtractor() regexp.Regexp {
+func compileLibraryVersionExtractor() regexp.Regexp {
 	configPattern := strings.Join(getConfigurations(), "|")
 	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+)(?::(?P<classifier>[a-zA-Z0-9_-]+))?)?"
 	return *regexp.MustCompile(fmt.Sprintf(`(?P<config>%s)\s*\(?["']%s["']\)?`, configPattern, libraryPattern))
