@@ -66,6 +66,7 @@ func findBuildGradle(root string, depth int, currentDepth int) ([]string, error)
 func getConfigurations() []string {
 	return []string{
 		"api",
+		"annotationProcessor",
 		"classpath",
 		"implementation",
 		"compileOnly",
