@@ -181,7 +181,7 @@ func extractVariableName(name string) string {
 	return name
 }
 
-func extractVersioVariables(versions Versions, extractor regexp.Regexp, text string) {
+func extractVersionVariables(versions Versions, extractor regexp.Regexp, text string) {
 	allMatches := extractor.FindAllStringSubmatch(text, -1)
 	for _, match := range allMatches {
 		key := match[1]
@@ -373,7 +373,7 @@ func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string, vari
 				return catalog, err
 			}
 			content := string(bytes)
-			extractVersioVariables(versionsAggregated, versionVariableExtractor, content)
+			extractVersionVariables(versionsAggregated, versionVariableExtractor, content)
 		}
 
 		versionVariableInPropertyFileExtractor := compileVersionVariableInPropertyFileExtractor(keys)
