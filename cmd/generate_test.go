@@ -126,6 +126,38 @@ foo-foo-ext = { group = "foo", name = "foo-ext", version.ref = "fooVersion" }
 `, string(f))
 }
 
+func TestVariableInGradleProperties(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+		api("foo:foo:$fooVersion")
+		api("bar:bar:${barVersion}")
+	`)
+	writeFile(t, tempdir, "foo/build.gradle", `
+		testImplementation("foo:foo-ext:${buzVersion}")
+	`)
+	writeFile(t, tempdir, "gradle.properties", `
+        buzVersion = 1.0
+        fooVersion=2.0-SNAPSHOT
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[versions]
+barVersion = "FIXME"
+buzVersion = "1.0"
+fooVersion = "2.0-SNAPSHOT"
+
+[libraries]
+bar-bar = { group = "bar", name = "bar", version.ref = "barVersion" }
+foo-foo = { group = "foo", name = "foo", version.ref = "fooVersion" }
+foo-foo-ext = { group = "foo", name = "foo-ext", version.ref = "buzVersion" }
+
+`, string(f))
+}
+
 func TestPluginsSupport(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")

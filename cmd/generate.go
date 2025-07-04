@@ -56,7 +56,8 @@ Caution:
 			return fmt.Errorf("failed to read the existing libs.versions.toml: %w", err)
 		}
 
-		catalog, err := extractVersionCatalog(*prevCatalog, foundFiles)
+		variableDefFiles := []string{filepath.Join(gradleProjectRootPath, "gradle.properties")}
+		catalog, err := extractVersionCatalog(*prevCatalog, foundFiles, variableDefFiles)
 		if err != nil {
 			return fmt.Errorf("failed to extract libs.versions.toml: %w", err)
 		}

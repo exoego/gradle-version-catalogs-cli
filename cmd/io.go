@@ -107,6 +107,11 @@ func compileVersionVariableExtractor(keys []string) regexp.Regexp {
 	return *regexp.MustCompile(fmt.Sprintf(`\W(%s)\W?=\W*["']([^"']+)["']`, combinedKeys))
 }
 
+func compileVersionVariableInPropertyFileExtractor(keys []string) regexp.Regexp {
+	combinedKeys := strings.Join(keys, "|")
+	return *regexp.MustCompile(fmt.Sprintf(`\s*(%s)\W?=\W*([^"'\r\n]+)`, combinedKeys))
+}
+
 func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, []StrictLibrary) {
 	versions := make(Versions, 0)
 
@@ -150,6 +155,17 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 	}
 
 	return versions, plugins, libs
+}
+
+func extractVersionInPropertyFile(extractor regexp.Regexp, text string) Versions {
+	versions := make(Versions, 0)
+	allMatchedLibs := extractor.FindAllStringSubmatch(text, -1)
+	for _, match := range allMatchedLibs {
+		key := match[1]
+		version := match[2]
+		versions[key] = version
+	}
+	return versions
 }
 
 var variableNameExtractor = regexp.MustCompile(`^\$(?:\{(.+)}|([^{}]+))$`)
@@ -324,7 +340,7 @@ func searchMaven(group, name string) string {
 	return data.Response.Docs[0].Version
 }
 
-func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string) (VersionCatalog, error) {
+func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string, variableDefFilePaths []string) (VersionCatalog, error) {
 	extractor := getStaticExtractors()
 
 	versionsAggregated := make(Versions, 0)
@@ -358,6 +374,18 @@ func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string) (Ver
 			}
 			content := string(bytes)
 			extractVersioVariables(versionsAggregated, versionVariableExtractor, content)
+		}
+
+		versionVariableInPropertyFileExtractor := compileVersionVariableInPropertyFileExtractor(keys)
+		for _, path := range variableDefFilePaths {
+			bytes, err := os.ReadFile(path)
+			if err != nil {
+				// Property file may not exist, so we can skip it
+				continue
+			}
+			content := string(bytes)
+			versionsInPropertyFile := extractVersionInPropertyFile(versionVariableInPropertyFileExtractor, content)
+			maps.Copy(versionsAggregated, versionsInPropertyFile)
 		}
 	}
 
