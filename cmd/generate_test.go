@@ -215,3 +215,44 @@ func TestAutoLatestDependency(t *testing.T) {
 	assert.NotContains(t, actual, `"FIXME"`, "Should not contain FIXME")
 	assert.Regexp(t, regexp.MustCompile(`name = "log4j-core", version = "\d+\.\d+\.\d+`), actual)
 }
+
+func TestMapNotation(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+		runtimeOnly(group: 'b.b', name :'bbb' , version: '2.0.0') {
+			transitive = true
+		}
+		implementation(group = "c.c", name = "ccc", version = dVersion)
+		implementation(group = "d.d", name = "ddd", version = "$dVersion") {
+			isTransitive = true
+		}
+		implementation(group = "e.e", name = "eee")
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[versions]
+dVersion = "FIXME"
+
+[libraries]
+b-b-bbb = { group = "b.b", name = "bbb", version = "2.0.0" }
+c-c-ccc = { group = "c.c", name = "ccc", version.ref = "dVersion" }
+d-d-ddd = { group = "d.d", name = "ddd", version.ref = "dVersion" }
+e-e-eee = { group = "e.e", name = "eee", version = "FIXME" }
+`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+		runtimeOnly(libs.b.b.bbb) {
+			transitive = true
+		}
+		implementation(libs.c.c.ccc)
+		implementation(libs.d.d.ddd) {
+			isTransitive = true
+		}
+		implementation(libs.e.e.eee)
+	`, string(f))
+}

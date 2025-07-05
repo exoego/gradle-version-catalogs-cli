@@ -82,20 +82,27 @@ func getConfigurations() []string {
 }
 
 type StaticExtractors struct {
-	plugin, library regexp.Regexp
+	plugin, libraryString, libraryMap regexp.Regexp
 }
 
 func getStaticExtractors() StaticExtractors {
 	return StaticExtractors{
-		plugin:  compilePluginExtractor(),
-		library: compieLibraryVersionExtractor(),
+		plugin:        compilePluginExtractor(),
+		libraryString: compileLibraryStringNotationExtractor(),
+		libraryMap:    compileLibraryMapNotationExtractor(),
 	}
 }
 
-func compieLibraryVersionExtractor() regexp.Regexp {
+func compileLibraryStringNotationExtractor() regexp.Regexp {
 	configPattern := strings.Join(getConfigurations(), "|")
 	libraryPattern := "(?P<group>[^:\"']+):(?P<name>[^:\"']+)(?::(?P<version>[^:\"']+)(?::(?P<classifier>[a-zA-Z0-9_-]+))?)?"
 	return *regexp.MustCompile(fmt.Sprintf(`(?P<config>%s)\s*\(?["']%s["']\)?`, configPattern, libraryPattern))
+}
+
+func compileLibraryMapNotationExtractor() regexp.Regexp {
+	configPattern := strings.Join(getConfigurations(), "|")
+	libraryPattern := "group\\s*[=:]\\s*[\"'](?P<group>[^:\"']+)[\"']\\s*,\\s*name\\s*[=:]\\s*[\"'](?P<name>[^:\"']+)[\"'](?:\\s*,\\s*version\\s*[=:]\\s*(?P<version>(?:\"\\$?\\{?[a-zA-Z0-9._-]+\\}?\"|'\\$?\\{?[a-zA-Z0-9._-]+\\}?'|[a-zA-Z0-9_]+)))?"
+	return *regexp.MustCompile(fmt.Sprintf(`(?P<config>%s)\s*\(?%s\)?`, configPattern, libraryPattern))
 }
 
 func compilePluginExtractor() regexp.Regexp {
@@ -115,8 +122,10 @@ func compileVersionVariableInPropertyFileExtractor(keys []string) regexp.Regexp 
 func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, []StrictLibrary) {
 	versions := make(Versions, 0)
 
-	allMatchedLibs := extractor.library.FindAllStringSubmatch(text, -1)
-	libs := make([]StrictLibrary, len(allMatchedLibs))
+	allMatchedLibs := extractor.libraryString.FindAllStringSubmatch(text, -1)
+	allMatchedMaps := extractor.libraryMap.FindAllStringSubmatch(text, -1)
+
+	libs := make([]StrictLibrary, len(allMatchedLibs)+len(allMatchedMaps))
 	for i, match := range allMatchedLibs {
 		var version string
 		if match[4] == "" {
@@ -134,6 +143,35 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 			key := extractVariableName(version)
 			versions[key] = "FIXME"
 			libs[i].Version = "$" + key
+		}
+	}
+
+	lastLength := len(allMatchedLibs)
+	for i, match := range allMatchedMaps {
+		var version string
+		version, hasQuote := unquote(match[4])
+		if version == "" {
+			hasQuote = true
+			version = "FIXME"
+		}
+		libs[i+lastLength] = StrictLibrary{
+			Group:   match[2],
+			Name:    match[3],
+			Version: version,
+		}
+
+		if hasQuote {
+			// version = "$fooVer"
+			if strings.HasPrefix(version, "$") {
+				key := extractVariableName(version)
+				versions[key] = "FIXME"
+				libs[i+lastLength].Version = "$" + key
+			}
+		} else {
+			// version = fooVer
+			key := version
+			versions[key] = "FIXME"
+			libs[i+lastLength].Version = "$" + key
 		}
 	}
 
@@ -179,6 +217,16 @@ func extractVariableName(name string) string {
 		return submatch[2]
 	}
 	return name
+}
+
+var quoteExtractor = regexp.MustCompile(`^["']([^"']*)["']$`)
+
+func unquote(name string) (string, bool) {
+	submatch := quoteExtractor.FindStringSubmatch(name)
+	if len(submatch) > 1 {
+		return submatch[1], true
+	}
+	return name, false
 }
 
 func extractVersionVariables(versions Versions, extractor regexp.Regexp, text string) {
@@ -249,8 +297,8 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 			return err
 		}
 		content := string(bytes)
-		content = extractor.library.ReplaceAllStringFunc(content, func(s string) string {
-			match := extractor.library.FindStringSubmatch(s)
+		content = extractor.libraryString.ReplaceAllStringFunc(content, func(s string) string {
+			match := extractor.libraryString.FindStringSubmatch(s)
 			config := match[1]
 			key := strings.ReplaceAll(catalogSafeKey(StrictLibrary{
 				Group:   match[2],
@@ -263,6 +311,17 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 			} else {
 				return fmt.Sprintf(`%s(variantOf(libs.%s) { classifier("%s") })`, config, key, classifier)
 			}
+		})
+
+		content = extractor.libraryMap.ReplaceAllStringFunc(content, func(s string) string {
+			match := extractor.libraryMap.FindStringSubmatch(s)
+			config := match[1]
+			key := strings.ReplaceAll(catalogSafeKey(StrictLibrary{
+				Group:   match[2],
+				Name:    match[3],
+				Version: match[4],
+			}), "-", ".")
+			return fmt.Sprintf("%s(libs.%s)", config, key)
 		})
 
 		content = extractor.plugin.ReplaceAllStringFunc(content, func(s string) string {

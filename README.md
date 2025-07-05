@@ -17,7 +17,7 @@ Example)
 // Before 
 val awsSdkVersion = "2.3.4"
 implementation("software.amazon.awssdk:sts:$awsSdkVersion")
-implementation("software.amazon.awssdk:dynamodb:$awsSdkVersion")
+implementation(group = "software.amazon.awssdk", name = "dynamodb", version = awsSdkVersion)
 implementation("ch.qos.logback:logback-classic") // auto version
 implementation("net.sf.json-lib:json-lib:2.3:jdk15") // classifier
 ```
