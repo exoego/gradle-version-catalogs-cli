@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"maps"
 	"os"
@@ -55,6 +56,34 @@ func WriteCatalog(path string, catalog VersionCatalog) error {
 	builder.WriteString(writeLibraries(catalog.Libraries))
 	builder.WriteString(writeBundles(catalog.Bundles))
 	builder.WriteString(writePlugins(catalog.Plugins))
+	return os.WriteFile(path, []byte(builder.String()), 0644)
+}
+
+func writeBuildSrcSettings(path string) error {
+	_, err := os.Stat(path)
+
+	var prevContent string
+	if err == nil {
+		bytes, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", path, err)
+		}
+		prevContent = string(bytes)
+		if strings.Contains(prevContent, "../gradle/libs.versions.toml") {
+			fmt.Printf("NOTICE: The file %s already contains the dependency resolution management block, skipping writing it.%s", path, LineBreak)
+			return nil
+		}
+	}
+
+	var builder strings.Builder
+	builder.WriteString(prevContent)
+	builder.WriteString(fmt.Sprintf(`dependencyResolutionManagement {%s`, LineBreak))
+	builder.WriteString(fmt.Sprintf(`    versionCatalogs { %s`, LineBreak))
+	builder.WriteString(fmt.Sprintf(`        create("libs") {%s`, LineBreak))
+	builder.WriteString(fmt.Sprintf(`            from(files("../gradle/libs.versions.toml"))%s`, LineBreak))
+	builder.WriteString(fmt.Sprintf(`        }%s`, LineBreak))
+	builder.WriteString(fmt.Sprintf(`    }%s`, LineBreak))
+	builder.WriteString(fmt.Sprintf("}%s", LineBreak))
 	return os.WriteFile(path, []byte(builder.String()), 0644)
 }
 

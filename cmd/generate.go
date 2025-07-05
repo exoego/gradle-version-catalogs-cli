@@ -66,9 +66,26 @@ Caution:
 			searchLatestVersions(catalog)
 		}
 
-		err = embedReferenceToLibs(foundFiles)
+		embedResult, err := embedReferenceToLibs(foundFiles)
 		if err != nil {
 			return fmt.Errorf("failed to rewrite build files: %w", err)
+		}
+
+		if embedResult.UpdatedBuildSrc {
+			var settingsGradlePath string
+			if embedResult.WrittenInKotlin {
+				settingsGradlePath = "settings.gradle.kts"
+			} else {
+				settingsGradlePath = "settings.gradle"
+			}
+
+			fullPath := filepath.Join(gradleProjectRootPath, "buildSrc", settingsGradlePath)
+			err := writeBuildSrcSettings(fullPath)
+			if err != nil {
+				return fmt.Errorf("failed to write %s: %w", fullPath, err)
+			}
+			fmt.Printf("Updated: %s%s", fullPath, LineBreak)
+			fmt.Printf("         ^ This file is used to resolve Version Catalog (libs.versions.toml) in buildSrc.%s", LineBreak)
 		}
 
 		err = WriteCatalog(outputPath, catalog)
