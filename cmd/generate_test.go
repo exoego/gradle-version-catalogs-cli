@@ -418,3 +418,50 @@ foo-bar = { group = "foo", name = "bar", version = "1.0" }
         }
 	`, string(f))
 }
+
+func TestBuildSrcAlreadyExistSettingsKotlin(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "buildSrc/build.gradle.kts", `
+        dependencies {
+            implementation("foo:bar:1.0")
+        }
+	`)
+	writeFile(t, tempdir, "buildSrc/settings.gradle.kts", `
+       // dummy content
+       dependencyResolutionManagement {
+            versionCatalogs {
+                create("libs") {
+                    from(files("../gradle/libs.versions.toml"))
+                }
+            }
+        }
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[libraries]
+foo-bar = { group = "foo", name = "bar", version = "1.0" }
+`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "buildSrc/build.gradle.kts"))
+	compareIgnoreLineBreaks(t, `
+        dependencies {
+            implementation(libs.foo.bar)
+        }
+	`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "buildSrc/settings.gradle.kts"))
+	compareIgnoreLineBreaks(t, `
+        // dummy content
+        dependencyResolutionManagement {
+            versionCatalogs {
+                create("libs") {
+                    from(files("../gradle/libs.versions.toml"))
+                }
+            }
+        }
+	`, string(f))
+}
