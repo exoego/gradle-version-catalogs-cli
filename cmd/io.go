@@ -301,16 +301,26 @@ func initVersionCatalog() VersionCatalog {
 	return catalog
 }
 
-func embedReferenceToLibs(buildFilePaths []string) error {
+type EmbedResult struct {
+	UpdatedBuildSrc bool
+	WrittenInKotlin bool
+}
+
+func embedReferenceToLibs(buildFilePaths []string) (EmbedResult, error) {
+	if len(buildFilePaths) == 0 {
+		return EmbedResult{}, nil
+	}
+
 	extractor := getStaticExtractors()
+	UpdatedBuildSrc := false
 
 	for _, buildFilePath := range buildFilePaths {
 		bytes, err := os.ReadFile(buildFilePath)
 		if err != nil {
-			return err
+			return EmbedResult{}, err
 		}
-		content := string(bytes)
-		content = extractor.libraryString.ReplaceAllStringFunc(content, func(s string) string {
+		originalContent := string(bytes)
+		updatedContent := extractor.libraryString.ReplaceAllStringFunc(originalContent, func(s string) string {
 			match := extractor.libraryString.FindStringSubmatch(s)
 			config := match[1]
 			key := strings.ReplaceAll(catalogSafeKey(StrictLibrary{
@@ -326,7 +336,7 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 			}
 		})
 
-		content = extractor.libraryMap.ReplaceAllStringFunc(content, func(s string) string {
+		updatedContent = extractor.libraryMap.ReplaceAllStringFunc(updatedContent, func(s string) string {
 			match := extractor.libraryMap.FindStringSubmatch(s)
 			config := match[1]
 			key := strings.ReplaceAll(catalogSafeKey(StrictLibrary{
@@ -337,7 +347,7 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 			return fmt.Sprintf("%s(libs.%s)", config, key)
 		})
 
-		content = extractor.plugin.ReplaceAllStringFunc(content, func(s string) string {
+		updatedContent = extractor.plugin.ReplaceAllStringFunc(updatedContent, func(s string) string {
 			match := extractor.plugin.FindStringSubmatch(s)
 			key := strings.ReplaceAll(catalogSafeKeyPlugin(Plugin{
 				Id:      match[2],
@@ -347,12 +357,22 @@ func embedReferenceToLibs(buildFilePaths []string) error {
 			return fmt.Sprintf("%salias(libs.plugins.%s)", leading, key)
 		})
 
-		err = os.WriteFile(buildFilePath, []byte(content), 0644)
+		if originalContent == updatedContent {
+			// No changes made, skip writing
+			continue
+		}
+
+		if strings.Contains(buildFilePath, "buildSrc") {
+			UpdatedBuildSrc = true
+		}
+
+		err = os.WriteFile(buildFilePath, []byte(updatedContent), 0644)
 		if err != nil {
-			return err
+			return EmbedResult{}, err
 		}
 	}
-	return nil
+	WrittenInKotlin := strings.HasSuffix(buildFilePaths[0], ".kts")
+	return EmbedResult{UpdatedBuildSrc, WrittenInKotlin}, nil
 }
 
 func searchLatestVersions(catalog VersionCatalog) {
