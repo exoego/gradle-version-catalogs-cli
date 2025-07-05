@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func getWorkingDirectory(args []string) (string, error) {
@@ -119,6 +120,16 @@ func compileVersionVariableInPropertyFileExtractor(keys []string) regexp.Regexp 
 	return *regexp.MustCompile(fmt.Sprintf(`\s*(%s)\W?=\W*([^"'\r\n]+)`, combinedKeys))
 }
 
+func escapeVersionVariableName(name string) string {
+	// 1.0.0.Final -> keeps as is
+	if unicode.IsDigit(rune(name[0])) {
+		return name
+	}
+
+	// foo.bar -> foo_bar
+	return strings.ReplaceAll(name, ".", "_")
+}
+
 func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, []StrictLibrary) {
 	versions := make(Versions, 0)
 
@@ -131,7 +142,7 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 		if match[4] == "" {
 			version = "FIXME"
 		} else {
-			version = match[4]
+			version = escapeVersionVariableName(match[4])
 		}
 		libs[i] = StrictLibrary{
 			Group:   match[2],
@@ -163,13 +174,13 @@ func extractTemp(extractor StaticExtractors, text string) (Versions, []Plugin, [
 		if hasQuote {
 			// version = "$fooVer"
 			if strings.HasPrefix(version, "$") {
-				key := extractVariableName(version)
+				key := extractVariableName(escapeVersionVariableName(version))
 				versions[key] = "FIXME"
 				libs[i+lastLength].Version = "$" + key
 			}
 		} else {
 			// version = fooVer
-			key := version
+			key := escapeVersionVariableName(version)
 			versions[key] = "FIXME"
 			libs[i+lastLength].Version = "$" + key
 		}
