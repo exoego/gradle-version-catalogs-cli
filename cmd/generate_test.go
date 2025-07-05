@@ -283,3 +283,31 @@ foo-bar-buz = { group = "foo", name = "bar-buz", version.ref = "versions_foo" }
         api(libs.foo.bar.buz)
 	`, string(f))
 }
+
+func TestResolutionStrategyForce(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+        resolutionStrategy.force "net.bytebuddy:byte-buddy:1.14.19"
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:1.9.10"
+        }
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[libraries]
+net-bytebuddy-byte-buddy = { group = "net.bytebuddy", name = "byte-buddy", version = "1.14.19" }
+org-jetbrains-kotlin-kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version = "1.9.10" }
+`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+        resolutionStrategy.force(libs.net.bytebuddy.byte.buddy)
+        resolutionStrategy {
+            force(libs.org.jetbrains.kotlin.kotlin.stdlib)
+        }
+	`, string(f))
+}
