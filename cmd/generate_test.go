@@ -256,3 +256,30 @@ e-e-eee = { group = "e.e", name = "eee", version = "FIXME" }
 		implementation(libs.e.e.eee)
 	`, string(f))
 }
+
+func TestTolerateDotInVariable(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+        api group: 'foo', name: 'bar', version:"${versions.foo}"
+        api 'foo:bar-buz:${versions.foo}'
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
+	compareIgnoreLineBreaks(t, `[versions]
+versions_foo = "FIXME"
+
+[libraries]
+foo-bar = { group = "foo", name = "bar", version.ref = "versions_foo" }
+foo-bar-buz = { group = "foo", name = "bar-buz", version.ref = "versions_foo" }
+`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+        api(libs.foo.bar)
+        api(libs.foo.bar.buz)
+	`, string(f))
+}
