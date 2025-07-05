@@ -79,6 +79,8 @@ func getConfigurations() []string {
 		"testImplementation",
 		"testCompileOnly",
 		"testRuntimeOnly",
+		"force",
+		//"resolutionStrategy.force",
 	}
 }
 
