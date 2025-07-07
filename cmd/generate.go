@@ -41,7 +41,12 @@ Caution:
 			return fmt.Errorf("not a Gradle project seemingly: %s", gradleDirPath)
 		}
 
-		foundFiles, err := findBuildGradle(gradleProjectRootPath, 3, 0)
+		maxDepth, err := cmd.Flags().GetInt8("max-depth")
+		if err != nil {
+			return fmt.Errorf("error option: %w", err)
+		}
+
+		foundFiles, err := findBuildGradle(gradleProjectRootPath, int(maxDepth), 0)
 		if err != nil {
 			return fmt.Errorf("error during listing up build.gradle files: %w", err)
 		}
@@ -102,4 +107,5 @@ Caution:
 func init() {
 	rootCmd.AddCommand(generateCommand)
 	generateCommand.Flags().Bool("auto-latest", true, "auto select latest version if none is specified")
+	generateCommand.Flags().Int8("max-depth", 3, "Maximum depth of searching gradle files. Project root is 0. Defaults to 3.")
 }
