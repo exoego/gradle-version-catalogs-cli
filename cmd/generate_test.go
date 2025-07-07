@@ -198,6 +198,54 @@ func TestMergeEmpty(t *testing.T) {
 	compareIgnoreLineBreaks(t, string(originalBytes), string(f))
 }
 
+func TestMaxDepth0(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+		api("org.apache.logging.log4j:log4j-core:1.0.0")
+	`)
+	writeFile(t, tempdir, "depth1/build.gradle", `
+		api("org.apache.logging.log4j:log4j-core:1.0.0")
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false", "--max-depth=0"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+api(libs.org.apache.logging.log4j.log4j.core)
+`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "depth1", "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+api("org.apache.logging.log4j:log4j-core:1.0.0")
+`, string(f))
+}
+
+func TestMaxDepth1(t *testing.T) {
+	tempdir := t.TempDir()
+	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
+	writeFile(t, tempdir, "build.gradle", `
+		api("org.apache.logging.log4j:log4j-core:1.0.0")
+	`)
+	writeFile(t, tempdir, "depth1/build.gradle", `
+		api("org.apache.logging.log4j:log4j-core:1.0.0")
+	`)
+
+	os.Args = []string{"cli", "generate", tempdir, "--auto-latest=false", "--max-depth=1"}
+	assert.NoError(t, generateCommand.Execute())
+
+	f, _ := os.ReadFile(filepath.Join(tempdir, "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+api(libs.org.apache.logging.log4j.log4j.core)
+`, string(f))
+
+	f, _ = os.ReadFile(filepath.Join(tempdir, "depth1", "build.gradle"))
+	compareIgnoreLineBreaks(t, `
+api(libs.org.apache.logging.log4j.log4j.core)
+`, string(f))
+}
+
 func TestAutoLatestDependency(t *testing.T) {
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
