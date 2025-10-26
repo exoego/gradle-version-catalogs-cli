@@ -57,7 +57,7 @@ net-sf-json-lib-json-lib = { group = "net.sf.json-lib", name = "json-lib", versi
 3. Run the command below
 
 ```bash
-./gradle-version-cataglos-cli generate
+./gradle-version-catalogs-cli generate
 ```
 
 ## Commands
