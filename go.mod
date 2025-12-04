@@ -6,7 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/stretchr/testify v1.11.1
 )
