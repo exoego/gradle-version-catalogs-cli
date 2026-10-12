@@ -2,7 +2,7 @@ module github.com/exoego/gradle-version-catalogs-cli
 
 go 1.24
 
-toolchain go1.24.2
+toolchain go1.27.2
 
 require (
 	github.com/BurntSushi/toml v1.6.0
