@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/stoewer/go-strcase"
 	"io"
@@ -388,16 +389,23 @@ func searchLatestVersions(catalog VersionCatalog) {
 }
 
 var client = &http.Client{
-	Timeout: 5 * time.Second,
+	Timeout: 10 * time.Second,
 	Transport: &http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout: time.Second,
+			Timeout: 5 * time.Second,
 		}).DialContext,
-		TLSHandshakeTimeout:   time.Second,
-		ResponseHeaderTimeout: time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ResponseHeaderTimeout: 5 * time.Second,
 		IdleConnTimeout:       time.Second,
 	},
 }
+
+const maxRetries = 3
+
+var (
+	mavenSearchURL = "https://search.maven.org/solrsearch/select"
+	retryBaseDelay = 500 * time.Millisecond
+)
 
 type MavenResponse struct {
 	Response struct {
@@ -409,27 +417,55 @@ type MavenResponse struct {
 }
 
 func searchMaven(group, name string) string {
-	res, err := client.Get(fmt.Sprintf("https://search.maven.org/solrsearch/select?q=g:%s+AND+a:%s&rows=5&core=gav&wt=json", group, name))
+	url := fmt.Sprintf("%s?q=g:%s+AND+a:%s&rows=5&core=gav&wt=json", mavenSearchURL, group, name)
+	var err error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			time.Sleep(retryBaseDelay << (attempt - 1))
+		}
+		var version string
+		var retryable bool
+		version, retryable, err = fetchLatestVersion(url)
+		if err == nil {
+			return version
+		}
+		if !retryable {
+			break
+		}
+	}
+	_, _ = fmt.Fprintf(os.Stderr, "WARNING: Failed to find the latest version of %s:%s: %v%s", group, name, err, LineBreak)
+	return "FIXME"
+}
+
+func fetchLatestVersion(url string) (version string, retryable bool, err error) {
+	res, err := client.Get(url)
 	if err != nil {
-		return "FIXME"
+		return "", true, err
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(res.Body)
 
+	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode >= http.StatusInternalServerError {
+		return "", true, fmt.Errorf("unexpected status: %s", res.Status)
+	}
+	if res.StatusCode != http.StatusOK {
+		return "", false, fmt.Errorf("unexpected status: %s", res.Status)
+	}
+
 	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "FIXME"
+		return "", true, err
 	}
 	data := MavenResponse{}
 	err = json.Unmarshal(bytes, &data)
 	if err != nil {
-		return "FIXME"
+		return "", false, err
 	}
 	if data.Response.NumFound == 0 {
-		return "FIXME"
+		return "", false, errors.New("not found in Maven Central")
 	}
-	return data.Response.Docs[0].Version
+	return data.Response.Docs[0].Version, false, nil
 }
 
 func extractVersionCatalog(catalog VersionCatalog, buildFilePaths []string, variableDefFilePaths []string) (VersionCatalog, error) {
