@@ -77,13 +77,13 @@ func writeBuildSrcSettings(path string) error {
 
 	var builder strings.Builder
 	builder.WriteString(prevContent)
-	builder.WriteString(fmt.Sprintf(`dependencyResolutionManagement {%s`, LineBreak))
-	builder.WriteString(fmt.Sprintf(`    versionCatalogs { %s`, LineBreak))
-	builder.WriteString(fmt.Sprintf(`        create("libs") {%s`, LineBreak))
-	builder.WriteString(fmt.Sprintf(`            from(files("../gradle/libs.versions.toml"))%s`, LineBreak))
-	builder.WriteString(fmt.Sprintf(`        }%s`, LineBreak))
-	builder.WriteString(fmt.Sprintf(`    }%s`, LineBreak))
-	builder.WriteString(fmt.Sprintf("}%s", LineBreak))
+	fmt.Fprintf(&builder, `dependencyResolutionManagement {%s`, LineBreak)
+	fmt.Fprintf(&builder, `    versionCatalogs { %s`, LineBreak)
+	fmt.Fprintf(&builder, `        create("libs") {%s`, LineBreak)
+	fmt.Fprintf(&builder, `            from(files("../gradle/libs.versions.toml"))%s`, LineBreak)
+	fmt.Fprintf(&builder, `        }%s`, LineBreak)
+	fmt.Fprintf(&builder, `    }%s`, LineBreak)
+	fmt.Fprintf(&builder, "}%s", LineBreak)
 	return os.WriteFile(path, []byte(builder.String()), 0644)
 }
 
