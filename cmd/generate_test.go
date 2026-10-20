@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 )
 
@@ -247,6 +247,7 @@ api(libs.org.apache.logging.log4j.log4j.core)
 }
 
 func TestAutoLatestDependency(t *testing.T) {
+	calls := stubMavenSearch(t, http.StatusOK)
 	tempdir := t.TempDir()
 	writeFile(t, tempdir, "gradle/wrapper/dummy.txt", "")
 	writeFile(t, tempdir, "build.gradle", `
@@ -260,8 +261,8 @@ func TestAutoLatestDependency(t *testing.T) {
 	f, _ := os.ReadFile(filepath.Join(tempdir, "gradle", "libs.versions.toml"))
 	actual := string(f)
 	assert.Contains(t, actual, "[libraries]", "Missing [libraries] section")
-	assert.NotContains(t, actual, `"FIXME"`, "Should not contain FIXME")
-	assert.Regexp(t, regexp.MustCompile(`name = "log4j-core", version = "\d+\.\d+\.\d+`), actual)
+	assert.Contains(t, actual, `name = "log4j-core", version = "2.26.0"`)
+	assert.Equal(t, int32(1), calls.Load())
 }
 
 func TestMapNotation(t *testing.T) {
