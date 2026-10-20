@@ -44,8 +44,5 @@ archives:
         formats: zip
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+  # Categories are defined in .github/release.yml
+  use: github-native
